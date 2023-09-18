@@ -1,0 +1,331 @@
+<h1>Build and Deploy a Web Application With React and Node.js + Express</h1>
+<p><em>by Leandro Ercoli</em></p>
+<p><img alt="" src="https://miro.medium.com/1*i9YveR_dTb6mXS83LB1xuw.png" /></p>
+<p>To go through the steps of connecting and running together a Node.js server with a React application, we will build a simple web application to search for artworks on the <a href="https://api.artic.edu/docs/">Art Institute of Chicago's API</a>. We will set up a basic login page, save a token on the browser to keep the user signed in, and search for artworks by a keyword on AIC's database. A log out button on the homepage will remove the token from local storage and redirect the user to the login page.</p>
+<blockquote>
+<p>Some knowledge and experience with Node.js, Express and React is require</p>
+</blockquote>
+<p><img alt="" src="https://miro.medium.com/1*CBt9CWTHuMPT6Ujz1X_Ksg.gif" /></p>
+<h2>Back end</h2>
+<p>First, we will start by building the back end of the application. Download and install the latest version of <a href="https://nodejs.org/en/">Node.js</a>. Create a new folder for this project and open a terminal window inside it. Run <code>npm init</code> to quickly create a <em>package.json</em> file, where we will list all the dependencies and their versions, as well as other metadata. This makes the project reproducible and eases collaboration between developers.</p>
+<blockquote>
+<p><em>Pro tip: install <a href="https://www.npmjs.com/package/nodemon">nodemon</a> globally to automatically restart the server on each file change.</em></p>
+</blockquote>
+<p>We will also install some packages before starting to write code. <a href="https://www.npmjs.com/package/express">Express</a> is a framework built on top of Node.js, that simplifies its API and allows us to smoothly add middleware, routing and request handlers. <a href="https://www.npmjs.com/package/cors">Cors</a> will deal with Cross-Origin Resource Sharing configuration. <a href="https://www.npmjs.com/package/dotenv">Dotenv</a> enables us to separate secrets (like port numbers, credentials or tokens) from source code, storing this information in a <em>.env</em> file that <strong>should not</strong> be committed on git. <a href="https://www.npmjs.com/package/express-validator">Express-validator</a> is a wrapper for validator.js that facilitates input sanitization and validation.</p>
+<p><code>npm i express cors dotenv express-validator</code></p>
+<p>The entry point file to the back end of the application (set by property <code>main</code> in the <em>package.json</em> file) will initialize a server and listen for connections on the specified port. We should also add all middleware functions and bind routes to controllers when the server is launched.</p>
+<p><code>require('dotenv').config(); // Load environment variables from .env file
+const Server = require('./models/server');
+const server = new Server();
+server.listen();</code></p>
+<p><em>Entry point file</em></p>
+<p>```
+const express = require("express");
+const cors = require("cors");
+const path = require("path");</p>
+<p>class Server {
+  constructor() {
+    this.app = express();
+    this.port = process.env.PORT; // Loaded from .env file
+    this.paths = {
+      auth: "/api/auth",
+      homepage: "/api/homepage",
+    };</p>
+<pre><code>this.middlewares();
+this.routes();
+</code></pre>
+<p>}</p>
+<p>middlewares() {
+    this.app.use(cors()); // Enable CORS
+  }</p>
+<p>// Bind controllers to routes
+  routes() {
+    this.app.use(this.paths.auth, require("../routes/auth"));
+    this.app.use(this.paths.homepage, require("../routes/homepage"));
+  }</p>
+<p>listen() {
+    this.app.listen(this.port, () =&gt; {
+      console.log("Server running on port: ", this.port);
+    });
+  }
+}
+module.exports = Server;
+```</p>
+<p><em>models/server.js</em></p>
+<p>```
+const { Router } = require('express');
+const router = Router();</p>
+<p>const { check } = require('express-validator');
+const { validationResult } = require('express-validator');
+const { login } = require('../controllers/auth');</p>
+<p>// validationResult: extracts the validation errors from a request and makes them available in a Result object.
+const validateInput = ( req, res, next ) =&gt; { 
+    const errors = validationResult(req);
+    if( !errors.isEmpty() ){
+        return res.status(400).json(errors);
+    }</p>
+<pre><code>next();
+</code></pre>
+<p>}</p>
+<p>router.post('/login',[
+    check('email', 'Email is required').isEmail(),
+    check('password', 'Password is required').not().isEmpty(),
+    validateInput
+],login );</p>
+<p>module.exports = router;
+```</p>
+<p><em>routes/auth.js</em></p>
+<p>We will sanitize and validate input data through <a href="https://expressjs.com/en/guide/using-middleware.html">middleware functions</a> on the request handler and, if no errors occur, send this values to the corresponding controller function. To keep this guide simple, the login controller will only allow the user to log in if the password entered is <em>"1234".</em> Ideally, this information would be matched to a database entry.</p>
+<p>```
+const { response } = require("express");</p>
+<p>const login = async (req, res = response) =&gt; {
+  const { email, password } = req.body;</p>
+<p>// Ideally search the user in a database,
+  // throw an error if not found.
+  if (password !== "1234") {
+    return res.status(400).json({
+      msg: "User / Password are incorrect",
+    });
+  }</p>
+<p>res.json({
+    name: "Test User",
+    token: "A JWT token to keep the user logged in.",
+    msg: "Successful login",
+  });
+};</p>
+<p>module.exports = {
+  login,
+};
+```</p>
+<p><em>controllers/auth.js</em></p>
+<p>This should be enough to log in and redirect the user to the homepage. We will check if there's a token saved on the browser each time the application loads.</p>
+<h2>API Integration</h2>
+<p>Since AIC's API requires no authorization protocol to request data, the controller will receive a keyword from the front end as a <a href="https://expressjs.com/en/api.html#req">URL parameter</a> and execute a request to the API for artworks that match the search term/s. To communicate with the API, we will install <a href="https://www.npmjs.com/package/cross-fetch">cross-fetch</a> library and execute a GET request with the appropriate parameters.</p>
+<p>The API response will be parsed as a JSON object, sent to the front end and turned into rendered UI components on the browser.</p>
+<p>```
+const fetch = require("cross-fetch");
+const { response } = require("express");
+const AIC_URL = "https://api.artic.edu/api/v1/artworks/search?q=";</p>
+<p>const getArtworks = async (req, res = response) =&gt; {
+  const { keyword } = req.params;</p>
+<p>try {
+    const resp = await fetch(
+      <code>${AIC_URL}${keyword}&amp;limit=15&amp;fields=id,title,image_id,date_display,artist_display,place_of_origin,medium_display</code>,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );</p>
+<pre><code>if (resp.status &gt;= 400) {
+  throw new Error("Bad response from server");
+}
+
+const { data = [] } = await resp.json();
+const dataWithUrls = data.map((image) =&gt; ({
+  ...image,
+  image_url: `https://www.artic.edu/iiif/2/${image.image_id}/full/843,/0/default.jpg`,
+}));
+
+res.json(dataWithUrls);
+</code></pre>
+<p>} catch (err) {
+    console.error(err);
+  }
+};</p>
+<p>module.exports = {
+  getArtworks,
+};
+```</p>
+<p><em>controllers/homepage.js</em></p>
+<h2>Front end</h2>
+<p>We will group all front end (React) code into a new folder at root level. It will pick up the same <code>.gitignore</code> rules we defined for the Node server (if you haven't yet, <code>git init</code> will create a new Git repository). Go into the folder created and start a React project with <a href="https://es.reactjs.org/docs/create-a-new-react-app.html#create-react-app">Create React App</a>.</p>
+<p><code>npx create-react-app node-react</code></p>
+<p>Since each part of the application will be running on separate ports on development, we need to <a href="https://create-react-app.dev/docs/proxying-api-requests-in-development/">proxy API requests</a> coming from the front end. To do this, if the back end server runs on port 8080, add this line in the client's <em>package.json</em>: <code>"proxy": "http://localhost:8080"</code></p>
+<p><img alt="Folder structure and front end proxy" src="https://miro.medium.com/1*rYpa4O1SZCdyQaiF0zga0g.png" /></p>
+<p>Now, all unknown requests to relative paths from the front end will be sent to the back end server running on port 8080. Note that this is only valid in development and will have no effect in production.</p>
+<p>Let's <a href="https://react-bootstrap.github.io/getting-started/introduction">install Bootstrap</a> and use its components for React to build a basic UI to interact with the back end. On the entry point component to the application, we will check for a token on local storage to know if the user has already signed in. On log out, we will remove the token from the browser's storage.</p>
+<p>```
+import React, { useEffect, useState } from "react";
+import Login from "./components/login";
+import Homepage from "./components/homepage";</p>
+<p>function App() {
+  const [isUserSignedIn, setIsUserSignedIn] = useState(false);
+  useEffect(() =&gt; {
+    if (localStorage.getItem("token")) setIsUserSignedIn(true);
+    else setIsUserSignedIn(false);
+  }, []);</p>
+<p>const onLoginSuccessful = () =&gt; {
+    setIsUserSignedIn(true);
+  };</p>
+<p>const onLogout = () =&gt; {
+    localStorage.removeItem("name");
+    localStorage.removeItem("token");
+    setIsUserSignedIn(false);
+  };</p>
+<p>return (
+    (isUserSignedIn &amp;&amp; <Homepage onLogout={onLogout} />) || (
+      <Login onLoginSuccessful={onLoginSuccessful} />
+    )
+  );
+}</p>
+<p>export default App;
+```</p>
+<p><em>App.js</em></p>
+<p>To trigger an AIC search for artworks we will execute requests to the back end using relative paths. As the application scales, keep all API functions in a folder separated from UI components.</p>
+<p>```
+export async function login({ email, password }) {
+  return await fetch("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) =&gt; {
+      // If request is not successful, display error message
+      if (!response.ok) {
+        throw new Error("HTTP status " + response.status);
+      }</p>
+<pre><code>  return response.json();
+})
+.catch((err) =&gt; {
+  console.log(err);
+});
+</code></pre>
+<p>}</p>
+<p>export async function searchArtworks({ keyword }) {
+  return await fetch(<code>/api/homepage/getArtworks/${keyword}</code>, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) =&gt; {
+      // If request is not successful, display error message
+      if (!response.ok) {
+        throw new Error("HTTP status " + response.status);
+      }</p>
+<pre><code>  return response.json();
+})
+.catch((err) =&gt; {
+  console.log(err);
+});
+</code></pre>
+<p>}
+```</p>
+<p><em>api/index.js</em></p>
+<p>We can now perform an API request to the Node.js server from a React UI component. For example, to look for artworks based on a keyword:</p>
+<p><code>const artworks = await searchArtworks({ keyword });</code></p>
+<p>```
+import React, { useState } from "react";
+import { Container, Row, Form, Button, InputGroup } from "react-bootstrap";
+import { searchArtworks } from "../../api";</p>
+<p>function Homepage() {
+  const [keyword, setKeyword] = useState("");
+  const [artworks, setArtworks] = useState([]);</p>
+<p>const onChangeKeyword = (event) =&gt; {
+    setKeyword(event.target.value);
+  };</p>
+<p>const onSearchArtworks = async (event) =&gt; {
+    event.preventDefault();
+    const artworks = await searchArtworks({ keyword });
+    setArtworks(artworks);
+  };</p>
+<p>return (
+    <Container fluid>
+      <Row noGutters>
+        <Form className="w-100 mb-5" onSubmit={onSearchArtworks}>
+          <InputGroup>
+            <Form.Control
+              type="text"
+              placeholder="e.g. Monet, O'Keeffe, Ancient Greek..."
+              onChange={onChangeKeyword}
+              value={keyword}
+            />
+            <InputGroup.Prepend>
+              <Button
+                variant="outline-primary"
+                disabled={!keyword}
+                type="submit"
+              >
+                Search artworks
+              </Button>
+            </InputGroup.Prepend>
+          </InputGroup>
+        </Form>
+      </Row>
+    </Container>
+  );
+}</p>
+<p>export default Homepage;
+```</p>
+<p><em>components/homepage.js</em></p>
+<h2>Concurrently</h2>
+<p>Developing and running the front and back end at the same time gets easier if we use npm's package <a href="https://www.npmjs.com/package/concurrently">concurrently</a>: we can run multiple commands concurrently and automatically reload both servers with every change.</p>
+<p><code>npm i -D concurrently</code></p>
+<p>Go to the root <code>package.json</code> file and add the following scripts. Make sure to set the value of the <code>--prefix</code> option to the right folder in your file structure.</p>
+<p><code>"scripts": {
+  "start": "node app",
+  "server": "nodemon",
+  "client": "npm start --prefix client",
+  "dev": "concurrently \"npm run server\" \"npm run client\"",
+  "build": "npm run build --prefix client"
+}</code></p>
+<p><em>Server's package.json</em></p>
+<p>Now we can run both applications with a single command: <code>npm run dev</code></p>
+<h2>Deployment</h2>
+<p>Before deploying the application to a hosting service, we need to build the client application and tell the back end how to load it.</p>
+<p>Run <code>npm run build</code> to bundle, minify and optimize all front end code into HTML, CSS and JavaScript files in the<code>build</code> folder. The entire React application will serve through the entry point<code>client/build/index.html</code>. This file has to be picked up by the back end server to serve the front end application: import the <a href="https://nodejs.org/api/path.html">path module</a> and add the next line to the <code>Server</code> class constructor, making sure to specify the relative path to the build folder that matches your project's file structure.</p>
+<p><code>this.app.use(express.static(
+    path.join(__dirname,"../client/build")));</code></p>
+<p>We will also add a new request handler on the <code>Server</code> class to catch all requests that do not match any route and send back React's <code>index.html</code> file.</p>
+<p>```
+const express = require("express");
+const cors = require("cors");
+const path = require("path");</p>
+<p>class Server {
+  constructor() {
+    this.app = express();
+    this.port = process.env.PORT;
+    this.paths = {
+      auth: "/api/auth",
+      homepage: "/api/homepage",
+    };</p>
+<pre><code>this.middlewares();
+this.routes();
+</code></pre>
+<p>}</p>
+<p>middlewares() {
+    this.app.use(cors());
+    this.app.use(express.json());</p>
+<pre><code>// Pick up React index.html file
+this.app.use(
+  express.static(path.join(__dirname, "../client/build"))
+);
+</code></pre>
+<p>}</p>
+<p>// Bind controllers to routes
+  routes() {
+    this.app.use(this.paths.auth, require("../routes/auth"));
+    this.app.use(this.paths.homepage, require("../routes/homepage"));
+    // Catch all requests that don't match any route
+    this.app.get("*", (req, res) =&gt; {
+      res.sendFile(
+        path.join(__dirname, "../client/build/index.html")
+      );
+    });
+  }</p>
+<p>listen() {
+    this.app.listen(this.port, () =&gt; {
+      console.log("Server running on port: ", this.port);
+    });
+  }
+}</p>
+<p>module.exports = Server;
+```</p>
+<p><em>models/server.js</em></p>
+<p>The application is now production ready. If you choose to deploy your application to <a href="https://www.heroku.com/home">Heroku</a>, start by signing up, going to the dashboard and creating a new app. You can then install Heroku CLI to manage your application from the terminal or link your GitHub repository for automatic deploys. Whichever method you choose to deploy make sure Node's <code>package.json</code> file is at the root of the directory structure.</p>
+<p>When you're ready to deploy your application, make sure all your changes are committed and push them to the deployment branch.</p>
+<blockquote>
+<p><a href="https://github.com/leandroercoli/NodeReact">Check out the full code for this application</a> or <a href="https://node-react-integration.herokuapp.com/">see it in action</a>.</p>
+</blockquote>
+<p><img alt="" src="https://miro.medium.com/1*jq2f06_l-642hVbxZ9iWmQ.png" /></p>
+<p>models/server.js</p>

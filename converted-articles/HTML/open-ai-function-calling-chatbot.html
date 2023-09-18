@@ -1,0 +1,489 @@
+<h1>Function Calling: Integrate Your GPT Chatbot With Anything</h1>
+<p>Imagine creating an AI assistant to which you can say something like, "Book me the earliest reservation for the nearest Thai restaurant and update my calendar." Language models continue to push boundaries and evolve. OpenAI, the company behind ChatGPT, recently introduced a powerful new feature called <a href="https://openai.com/blog/function-calling-and-other-api-updates">function calling</a>in their GPT models. Function calling simplifies the creation of chatbots that communicate with external tools and APIs, opening up a new realm of possibilities for AI-powered applications.</p>
+<p>In this article, we will delve into the concept of function calling, its implications, and its transformative impact on how we interact with AI systems by creating <strong>NewsGPT</strong>, a chatbot that brings you breaking news worldwide.</p>
+<p><img alt="" src="https://miro.medium.com/0*Lbp8GTkHx7PAoIVU.jpg" /></p>
+<h2>What is Function Calling?</h2>
+<p>Function calling is a new feature in OpenAI's <strong>GPT-4–0613</strong> and <strong>GPT-3.5 Turbo-0613</strong>models. These AI models are trained to detect the need for function calling based on the user's prompt and respond with a structured call request instead of regular text.</p>
+<p>Function calling allows chatbots to interact with other systems, enabling the GPT models to respond to questions they otherwise could not, such as those requiring real-time information or data not included in their training set. In other words, function calling provides another way to <strong>teach AI models how to interact with the external world</strong>.</p>
+<h2>What is the Purpose of Function Calling?</h2>
+<p>Before function calling, there were only two ways of augmenting the capabilities of a GPT language model:</p>
+<ul>
+<li>
+<p><strong><a href="https://platform.openai.com/docs/guides/fine-tuning">Fine-tuning</a></strong>: further training the language model by providing example responses. Fine-tuning is a powerful technique, but it requires significant work (and cost) to prepare the training data. In addition, only a few older models can be fine-tuned until OpenAI enables this feature in GPT-3.5 and GPT-4 models.</p>
+</li>
+<li>
+<p><strong>Embeddings</strong>: <a href="https://semaphoreci.com/blog/word-embeddings">enriching the prompt with context data</a> can extend the bot's knowledge and create more accurate responses. The downside is that this context can take up a lot of tokens, increasing the cost and leaving fewer tokens free for building complex responses.</p>
+</li>
+</ul>
+<p>Function calling adds a third way of extending the GPT capabilities by allowing it to ask us to run functions on its behalf. The model can then take the function's result and build a human-readable response that fits seamlessly into the current conversation.</p>
+<h2>How to Use Function Calling</h2>
+<p>The introduction of function calling changes how we interact with the GPT API. Before these functions, the interaction was simple:</p>
+<ol>
+<li>
+<p>Send a prompt to the API.</p>
+</li>
+<li>
+<p>Receive a response.</p>
+</li>
+<li>
+<p>Repeat.</p>
+</li>
+</ol>
+<p>With function calling, the sequence becomes more involved:</p>
+<ol>
+<li>
+<p>Send the user prompt along with a list of callable functions.</p>
+</li>
+<li>
+<p>The GPT model responds with either a regular text response or a function call request.</p>
+</li>
+<li>
+<p>If the model requests a function call, your chatbot's job is to execute it and return the results to the API.</p>
+</li>
+<li>
+<p>Using the supplied data, the model then forms a coherent text response. However, in some cases, the API may request a new function call.</p>
+</li>
+</ol>
+<p><img alt="" src="https://miro.medium.com/0*RcE4DL-wGRz2Ex31.jpg" /></p>
+<h2>Function Calling with the Chat Completions API</h2>
+<p>To allow the model to call functions, we must use the <a href="https://platform.openai.com/docs/guides/gpt/chat-completions-api">Chat Completions API</a>. The API takes a POST request with a JSON payload containing a list of messages to process. A typical prompt sent to the API looks like the following:</p>
+<p><code>json
+{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How many planets does the solar system have?"
+    }
+  ]
+}</code></p>
+<p>The <code>role: user</code> informs the API that the <code>content</code> is user-generated. The GPT API might reply with something along these lines:</p>
+<p><code>swift
+{
+  "id": "chatcmpl-7WVo3fYwerpAptzeqU46JamOvgBzh",
+  "object": "chat.completion",
+  "created": 1687983115,
+  "model": "gpt-3.5-turbo-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "There are eight planets in the solar system. They are:\n\n1. Mercury\n2. Venus\n3. Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15,
+    "completion_tokens": 44,
+    "total_tokens": 59
+  }
+}</code></p>
+<p>The <code>role: assistant</code> corresponds to messages generated by the GPT model. To keep the conversation flow, we must supply the entire message history back to the API on each request. For example, if we want to delve deeper into our previous question, the corresponding JSON payload would be:</p>
+<p><code>swift
+{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How many planets does the solar system have?"
+    },
+    {
+      "role": "assistant",
+      "content": "There are eight planets in the solar system. They are:\n\n1. Mercury\n2. Venus\n3. Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"
+    },
+    {
+      "role": "user",
+      "content": "Tell me more about the second planet."
+    }
+  ]
+}</code></p>
+<p>To let the language model know it can call functions, we need to add a list of them to the payload. For example:</p>
+<p><code>json
+{
+  "model": "gpt-3.5-turbo-0613",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How is the weather in NYC?"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_current_weather",
+      "description": "Get the current weather in a given location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "The city and state, e.g. San Francisco, CA"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "celsius",
+              "fahrenheit"
+            ]
+          }
+        },
+        "required": [
+          "location"
+        ]
+      }
+    }
+  ]
+}</code></p>
+<p>You may have noticed that we switched the model to "gpt-3.5-turbo-0613" because it supports function calling. If the model decides to call the function, we will receive a response of type <code>role: assistant</code> with a <code>function_call</code> property defined like this:</p>
+<p><code>swift
+{
+  "id": "chatcmpl-7WWG94C1DCFlAk5xmUwrZ9OOhFnOq",
+  "object": "chat.completion",
+  "created": 1687984857,
+  "model": "gpt-3.5-turbo-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "function_call": {
+          "name": "get_current_weather",
+          "arguments": "{\n  \"location\": \"New York, NY\"\n}"
+        }
+      },
+      "finish_reason": "function_call"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 81,
+    "completion_tokens": 19,
+    "total_tokens": 100
+  }
+}</code></p>
+<p>Our task is to execute <code>get_current_weather</code> with the provided arguments. OpenAI <strong>does not</strong> execute the function. Instead, it's the job of our chatbot to run it and parse the returned data.</p>
+<p>Once we retrieve the weather data, we send it back to the model using a new type of role called <code>function</code>. For example:</p>
+<p><code>swift
+{
+  "model": "gpt-3.5-turbo-0613",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How is the weather in NYC?"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "function_call": {
+        "name": "get_current_weather",
+        "arguments": "{\n  \"location\": \"New York, NY\"\n}"
+      }
+    },
+    {
+      "role": "function",
+      "name": "get_current_weather",
+      "content": "Temperature: 57F, Condition: Raining"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_current_weather",
+      "description": "Get the current weather in a given location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "The city and state, e.g. San Francisco, CA"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "celsius",
+              "fahrenheit"
+            ]
+          }
+        },
+        "required": [
+          "location"
+        ]
+      }
+    }
+  ]
+}</code></p>
+<p>Note that we passed the entire message history to the API, including our original prompt, the function call from the model, and the result of executing the weather function in our code. This enables the language model to understand the context in which the function was called.</p>
+<p>Finally, the model may reply with a properly formatted answer, responding to our initial question:</p>
+<p><code>json
+{
+  "id": "chatcmpl-7WWQUccvLUfjhbIcuvFrj2MDJVEiN",
+  "object": "chat.completion",
+  "created": 1687985498,
+  "model": "gpt-3.5-turbo-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The weather in New York City is currently raining with a temperature of 57 degrees Fahrenheit."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 119,
+    "completion_tokens": 19,
+    "total_tokens": 138
+  }
+}</code></p>
+<h2>Building NewsGPT</h2>
+<p>To learn more about function calling, we will build <strong>NewsGPT</strong>, a Python chatbot capable of accessing breaking news in real time. The bot will use function calling to determine what kind of data to fetch from <a href="https://newsapi.org/">NewsAPI.org</a>.</p>
+<p>To build the bot, you will need the following:</p>
+<ul>
+<li>
+<p>An OpenAI API key. This requires a credit card because API requests have a cost. However, new accounts receive $5 credit for the first three months.</p>
+</li>
+<li>
+<p>A NewsAPI API key. Register at <a href="https://newsapi.org/">NewsAPI.org</a> and get a starter key for free.</p>
+</li>
+<li>
+<p>Python 3.</p>
+</li>
+</ul>
+<h2>Setting Up the Project</h2>
+<p>Install the required dependencies:</p>
+<p><code>ruby
+$ pip install openai tiktoken</code></p>
+<p>The project consists of only one file; let's name it <code>newsgpt.py</code>. I will begin by adding all the necessary imports:</p>
+<p><code>cpp
+import openai
+import tiktoken
+import json
+import os
+import requests</code></p>
+<p>Next, I will define a few constants:</p>
+<ul>
+<li>
+<p>The GPT model to use. I will use <code>gpt-3.5-turbo-16k</code> as it has a 16k token limit, allowing me to process longer conversations with more context.</p>
+</li>
+<li>
+<p>The system prompt that instructs the model on its basic purpose.</p>
+</li>
+<li>
+<p>The encoding used to count tokens in strings and messages; required to ensure we do not exceed the language model limits.</p>
+</li>
+<li>
+<p>The maximum number of functions to call in a chain (more on this later).</p>
+</li>
+</ul>
+<p><code>ini
+llm_model = "gpt-3.5-turbo-16k"
+llm_max_tokens = 15500
+llm_system_prompt = "You are an assistant that provides news and headlines to user requests. Always try to get the lastest breaking stories using the available function calls."
+encoding_model_messages = "gpt-3.5-turbo-0613"
+encoding_model_strings = "cl100k_base"
+function_call_limit = 3</code></p>
+<p>All OpenAI models have a token limit. If this limit is exceeded, the API will throw an error instead of responding to our request. So, we need a function to count the number of tokens. I will use this function from the official example documentation:</p>
+<p><code>python
+def num_tokens_from_messages(messages):
+    """Returns the number of tokens used by a list of messages."""
+    try:
+        encoding = tiktoken.encoding_for_model(encoding_model_messages)
+    except KeyError:
+        encoding = tiktoken.get_encoding(encoding_model_strings)</code></p>
+<p><code>num_tokens = 0
+    for message in messages:
+        num_tokens += 4
+        for key, value in message.items():
+            num_tokens += len(encoding.encode(str(value)))
+            if key == "name":
+                num_tokens += -1
+    num_tokens += 2
+    return num_tokens</code></p>
+<h2>Defining a Function to Call</h2>
+<p>Now, I will define a function to query the <a href="https://newsapi.org/">NewsAPI.org</a> API to get the breaking news:</p>
+<p><code>python
+def get_top_headlines(query: str = None, country: str = None, category: str = None):
+    """Retrieve top headlines from newsapi.org (API key required)"""</code></p>
+<p><code>base_url = "https://newsapi.org/v2/top-headlines"
+    headers = {
+        "x-api-key": os.environ['NEWS_API_KEY']
+    }
+    params = { "category": "general" }
+    if query is not None:
+        params['q'] = query
+    if country is not None:
+        params['country'] = country
+    if category is not None:
+        params['category'] = category</code></p>
+<p><code># Fetch from newsapi.org - reference: https://newsapi.org/docs/endpoints/top-headlines
+    response = requests.get(base_url, params=params, headers=headers)
+    data = response.json()</code></p>
+<p><code>if data['status'] == 'ok':
+        print(f"Processing {data['totalResults']} articles from newsapi.org")
+        return json.dumps(data['articles'])
+    else:
+        print("Request failed with message:", data['message'])
+        return 'No articles found'</code></p>
+<p>To inform GPT about this function, we need to describe using a specific JSON structure. The format is described in the <a href="https://platform.openai.com/docs/guides/gpt/function-calling">official documentation</a> as follows:</p>
+<p><code>makefile
+signature_get_top_headlines = {
+    "name": "get_top_headlines",
+    "description": "Get top news headlines by country and/or category",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "Freeform keywords or a phrase to search for.",
+            },
+            "country": {
+                "type": "string",
+                "description": "The 2-letter ISO 3166-1 code of the country you want to get headlines for",
+            },
+            "category": {
+                "type": "string",
+                "description": "The category you want to get headlines for",
+                "enum": ["business","entertainment","general","health","science","sports","technology"]
+            }
+        },
+        "required": [],
+    }
+}</code></p>
+<h2>Using the Chat Completions API with Function Calling</h2>
+<p>Next, I will define the <code>complete</code> function, which performs several tasks:</p>
+<ol>
+<li>
+<p>Adds a system prompt at the end of the messages. This system message helps define the role that the GPT model will fulfill.</p>
+</li>
+<li>
+<p>Removes old messages if the total token count exceeds the model's limit.</p>
+</li>
+<li>
+<p>Sends the request to the GPT API.</p>
+</li>
+<li>
+<p>Removes the system message from the end of the list.</p>
+</li>
+</ol>
+<p><code>python
+def complete(messages, function_call: str = "auto"):
+    """Fetch completion from OpenAI's GPT"""</code></p>
+<p><code>messages.append({"role": "system", "content": llm_system_prompt})</code></p>
+<p><code># delete older completions to keep conversation under token limit
+    while num_tokens_from_messages(messages) &gt;= llm_max_tokens:
+        messages.pop(0)</code></p>
+<p>```
+    print('Working...')
+    res = openai.ChatCompletion.create(
+        model=llm_model,
+        messages=messages,
+        functions=[signature_get_top_headlines],
+        function_call=function_call
+    )</p>
+<pre><code># remove system message and append response from the LLM
+messages.pop(-1)
+response = res["choices"][0]["message"]
+messages.append(response)
+</code></pre>
+<p>```</p>
+<p><code># call functions requested by the model
+    if response.get("function_call"):
+        function_name = response["function_call"]["name"]
+        if function_name == "get_top_headlines":
+            args = json.loads(response["function_call"]["arguments"])
+            headlines = get_top_headlines(
+                query=args.get("query"),
+                country=args.get("country"),
+                category=args.get("category")        
+            )
+            messages.append({ "role": "function", "name": "get_top_headline", "content": headlines})</code></p>
+<p>To complete the bot, we will create the main loop that continuously prompts the user for input and provides the answers:</p>
+<p><code>swift
+print("\nHi, I'm a NewsGPT, a breaking news AI assistant. I can give you news for most countries over a wide range of categories.")
+print("Here are some example prompts:\n - Tell me about the recent science discoveries\n - What is the latest news in the US?\n - What has Elon Musk been up to recently?")</code></p>
+<p><code>messages = []
+while True:
+    prompt = input("\nWhat would you like to know? =&gt; ")
+    messages.append({"role": "user", "content": prompt})
+    complete(messages)</code></p>
+<p><code># the LLM can chain function calls, this implements a limit
+    call_count = 0
+    while messages[-1]['role'] == "function":
+        call_count = call_count + 1
+        if call_count &lt; function_call_limit:
+            complete(messages)
+        else:
+            complete(messages, function_call="none")</code></p>
+<p><code># print last message
+    print("\n\n==Response==\n")
+    print(messages[-1]["content"].strip())
+    print("\n==End of response==")</code></p>
+<p>Next, we need to define environment variables for the OpenAI and NewsAPI API keys:</p>
+<p><code>bash
+export OPENAI_API_KEY=YOUR_API_KEY
+export NEWS_API_KEY=YOUR_API_KEY</code></p>
+<p>Finally, load the file and run the chatbot.</p>
+<p><code>shell
+$ source .env
+$ python newsgpt.py</code></p>
+<h2>Testing NewsGPT</h2>
+<p>We can inquire about a specific topic or person. For example:</p>
+<p>```csharp
+=&gt; What is Elon Musk up these days?
+Working...
+Processing 1 articles from newsapi.org
+Working...</p>
+<p>```</p>
+<p><code>==Response==</code></p>
+<p><code>Elon Musk has been in the news recently regarding a feud with Mark Zuckerberg, 
+the CEO of Meta. According to an article from The Washington Post, Mark Zuckerberg
+ is trying to make himself more relevant to the tech elite, and there seems to be a 
+rivalry between him and Elon Musk. The article discusses their ongoing fight and 
+how Zuckerberg is trying to compete with Musk's online antagonism and offline antics. 
+You can read more about it [here](https://www.washingtonpost.com/technology/2023/06/24/elon-musk-mark-zuckerberg-fight-meta-twitter-rival/).</code></p>
+<p><code>==End of response==</code></p>
+<p>It can countries as well, enabling us to query the bot for news about a particular region:</p>
+<p>```csharp
+What is the latest news from France?
+Working...
+Processing 34 articles from newsapi.org
+Working...</p>
+<p>```</p>
+<p><code>==Response==</code></p>
+<p><code>Here are some of the latest news headlines in France:</code></p>
+<p><code>1. "Diplôme national du brevet session 2023"
+  The Ministry of National Education announces the national diploma for the 2023 session. 
+  [Read more](https://news.google.com/rss/articles/CBMiTGh0dHBzOi8vd3d3LmVkdWNhdGlvbi5nb3V2LmZyL2RpcGxvbWUtbmF0aW9uYWwtZHUtYnJldmV0LXNlc3Npb24tMjAyMy0zNzg1NjDSAQA?oc=5)</code></p>
+<p><code>2. "Cyclisme: la Nordiste Victoire Berteau sacrée championne de France après sa victoire sur les routes de Cassel"
+   Victoire Berteau from Nord wins the championship in cycling in France. 
+ [Read more](https://news.google.com/rss/articles/CBMiiQFodHRwczovL3d3dy5mcmFuY2V0dmluZm8uZnIvc3BvcnRzL2N5Y2xpc21lL2N5Y2xpc21lLXZpY3RvaXJlLWJlcnRlYXUtc2FjcmVlLWNoYW1waW9ubmUtZGUtZnJhbmNlLWFwcmVzLXNhLXZpY3RvaXJlLWEtY2Fzc2VsXzU5MDg4NDcuaHRtbNIBAA?oc=5)</code></p>
+<p><code>3. "Guerre en Ukraine: comment les capitales étrangères réagissent-elles à la rébellion de la milice Wagner en Ru"
+    Foreign capitals' reactions to the rebellion of the Wagner militia in Ukraine. 
+ [Read more](https://news.google.com/rss/articles/CBMiwAFodHRwczovL3d3dy5mcmFuY2V0dmluZm8uZnIvbW9uZGUvZXVyb3BlL21hbmlmZXN0YXRpb25zLWVuLXVrcmFpbmUvZ3VlcnJlLWVuLXVrcmFpbmUtY29tbWVudC1sZXMtY2FwaXRhbGVzLWV0cmFuZ2VyZXMtcmVhZ2lzc2VudC1lbGxlcy1hLXJlYmVsbGlvbi1kZS1sYS1taWxpY2Utd2FnbmVyLWVuLXJ1c3NpZV81OTA4NzY2Lmh0bWzSAQA?oc=5)</code></p>
+<p><code>4. "Marche des fiertés LGBT+: six jeunes mineurs interpellés pour homophobie"
+   Six minors arrested for homophobia during the LGBT+ Pride March. 
+ [Read more](https://news.google.com/rss/articles/CBMifmh0dHBzOi8vd3d3LnJ0bC5mci9hY3R1L2p1c3RpY2UtZmFpdHMtZGl2ZXJzL21hcmNoZS1kZXMtZmllcnRlcy1sZ2J0LXNpeC1qZXVuZXMtbWluZXVycy1pbnRlcnBlbGxlcy1wb3VyLWhvbW9waG9iaWUtNzkwMDI3Nzg4M9IBAA?oc=5)</code></p>
+<p><code>5. "ATP 500 Queen's - De Minaur a dominé Rune avec autorité: le film de la demi-finale"
+    Alex de Minaur dominates Rune in the ATP 500 Queen's semifinals.
+   [Read more](https://news.google.com/rss/articles/CBMimwFodHRwczovL3d3dy5ldXJvc3BvcnQuZnIvdGVubmlzL2F0cC1sb25kcmVzLzIwMjMvYXRwLTUwMC1xdWVlbi1zLXN1aXZlei1sYS1kZW1pLWZpbmFsZS1lbnRyZS1hbGV4LWRlLW1pbmF1ci1ldC1ob2xnZXItcnVuZS1lbi1kaXJlY3Rfc3RvOTY3MTM4My9zdG9yeS5zaHRtbNIBAA?oc=5)</code></p>
+<p><code>These are just a few of the latest news headlines in France. Let me know if you want more information about any specific news article.</code></p>
+<p><code>==End of response==</code></p>
+<h2>Ideas for Improvement</h2>
+<p>This simple bot is quite capable, even with a single function call. Now, imagine the possibilities if we integrate more features. Here are a few ideas to augment NewsGPT:</p>
+<ul>
+<li>
+<p>Retrieve the original articles to get summaries and analyze the news. We would need to navigate paywalls, perform web scraping, or check if RSS feeds or APIs provide content.</p>
+</li>
+<li>
+<p>Add more endpoints. NewsAPI offers endpoints for searching news by date, categories, and filtering through <a href="https://newsapi.org/docs/endpoints/sources">sources</a>.</p>
+</li>
+<li>
+<p>Incorporate extra integrations, such as obtaining real-time data from sources like weather or finance.</p>
+</li>
+</ul>
+<h2>Conclusion</h2>
+<p>Function calling is a powerful feature in OpenAI's GPT models, enabling them to interact with external tools and APIs in a more deterministic and structured manner. This feature lays the groundwork for more dynamic and responsive AI applications capable of providing current information and executing tasks beyond what was previously possible.</p>
+<p>Happy building!</p>
+<hr />
+<p><em>Originally published at <a href="https://semaphoreci.com/blog/function-calling">https://semaphoreci.com</a> on August 3, 2023.</em></p>

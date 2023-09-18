@@ -1,0 +1,305 @@
+<h1>How to build a Chatbot with ChatGPT API and a Conversational Memory in Python</h1>
+<p><strong>🧠 Memory Bot 🤖 - An easy up-to-date implementation of ChatGPT API, the GPT-3.5-Turbo model, with LangChain AI's 🦜 - ConversationChain memory module with Streamlit front-end.</strong></p>
+<p>👨🏾 ‍💻  G<a href="https://github.com/avrabyt">itHub </a>⭐️| 🐦  T<a href="https://twitter.com/avra_b">witter </a>| 📹  Y<a href="https://www.youtube.com/@Avra_b">ouTube </a>| ☕️ B<a href="https://www.buymeacoffee.com/AvraCodes">uyMeaCoffee </a>| K<a href="https://ko-fi.com/avrabyt">o-fi💜 </a></p>
+<p><img alt="" src="https://miro.medium.com/1*zCdaOlocbFcZY60GxcrhtA.png" /></p>
+<h2>Introduction</h2>
+<p>With the emergence of Large Language Models (LLMs), AI technologies have advanced to a level where humans can converse with chatbots in a way that resembles human conversation. In my opinion, chatbots are poised to become an essential component of our daily lives for a wide range of problem-solving tasks. We will soon encounter chatbots in various domains, including customer service and personal assistance.</p>
+<p><img alt="&quot;Conversation is food for the soul. It nourishes our spirits and helps us to grow.&quot; - John Templeton |Photo by Etienne Boulanger on Unsplash" src="https://miro.medium.com/0*EiU1SREAmC7shEy7" /></p>
+<p>Let me highlight the relevance of this blog post, by addressing the important <em><strong>context</strong></em> in our day-to-day <em><strong>conversation</strong></em>. Conversations are natural ways for humans to communicate and exchange informations. In conversations, we humans rely on our <em><strong>memory</strong></em> to remember what has been previously discussed (i.e. the <strong>context</strong>), and to use that information to generate relevant responses. Likewise, instead of humans if we now include chatbots with whom we would like to converse, <em><strong>the ability to remember the context of the conversation is important for providing a seamless and natural conversational experience</strong>.</em></p>
+<p><em>"In a world where you can be anything, be kind. And one of the simplest ways to do that is through conversation" - Karamo Brown</em></p>
+<p>Now, imagine a chatbot that is <em><strong>stateless</strong></em>, i.e. the chatbot treats each incoming query/input from the user independently - and forgets about the past conversations or context ( in simpler terms they lack the memory ). I'm certain, we all are used to such AI assistants or chatbots.I would refer to them here as <em><strong>traditional</strong></em> chatbots.</p>
+<p><img alt="You definitely know the context here ....😉  |Photo by Tron Le on Unsplash" src="https://miro.medium.com/0*Rytnxznp3bt9nbaA" /></p>
+<p>A major drawback of traditional chatbots is that they can't provide a seamless and natural conversational experience for users. Since they don't remember the context of the conversation, users often have to repeat themselves or provide additional information that they've already shared. Another issue can sometimes be irrelevant or "off-topic". Without such abilities, it's more difficult for these chatbots to generate coherent and relevant responses based on what has been discussed. This can lead to frustrating and a less satisfying user experience.</p>
+<p><img alt="Traditional chatbots looses the context . For instance, does not remember the name of the 'country' that was mentioned in the past context | Image by Author" src="https://miro.medium.com/1*g4vyQTiQ9T4-_GE_16U2_g.png" /></p>
+<p><em>I've a <a href="https://medium.com/@avra42/build-your-own-chatbot-with-openai-gpt-3-and-streamlit-6f1330876846">blog post</a> and <a href="https://youtu.be/BHwVRI9N8B0">YouTube video</a> explaining how to build such <strong>traditional or simple Chatbot</strong>. Here's a quick recap and <a href="https://next.databutton.com/v/lgzxq112/Traditional_Chat_Bot">live app to try.</a></em></p>
+<p><img alt="A quick demo of a **traditional** **chat bot** 🤖 which I built and demostrated previously. The bot lacks the memory and looses the conversational context." src="https://miro.medium.com/1*-c-2eJi_qR8gm6V5j9QMrw.gif" /></p>
+<p><em><strong>However, in this blog post, we will be introducing our chatbot that overcomes the limitations of traditional chatbots. Our chatbot will have the ability to remember the context of the conversation, making it a more natural and seamless experience for the users.</strong></em> We like to call it the "<strong>MemoryBot</strong>" 🧠 🤖</p>
+<p><img alt="" src="https://miro.medium.com/1*j04XeiXI9jiF_Fgj-iqt4g.png" /></p>
+<h2>Building the 🧠 Memory Bot 🤖</h2>
+<p>The following resources will be instrumental in our development,</p>
+<ul>
+<li>
+<p><strong><a href="https://openai.com">OpenAI</a></strong> is a research organization that aims to create advanced artificial intelligence in a safe and beneficial way. They have developed several large language models (LLMs) like GPT-3, which are capable of understanding and generating human-like language. These models are trained on vast amounts of data and can perform tasks such as language translation, summarization, question answering, and more. The models offered can be accessed via API keys. In order to create one, please follow my other blog posts and tutorial videos (refer to the related blog section below ). Open AI also provides a Python package to work with. <strong>For installation use,</strong> <code>pip install openai</code></p>
+</li>
+<li>
+<p><strong><a href="https://langchain.readthedocs.io/en/latest/index.html">LangChain</a></strong> is a Python library that provides a standard interface for memory and a collection of memory implementations for chatbots. It also includes examples of chains/agents that use memory, making it easy for developers to incorporate conversational memory into their chatbots using LangChain.LangChain's memory module for chatbots is designed to enable conversational memory for large language models (LLMs). <strong>For installation use,</strong> <code>pip install langchain</code></p>
+</li>
+<li>
+<p><strong><a href="https://streamlit.io">Streamlit</a></strong> is an open-source app framework for building data science and machine learning web applications. It allows developers to create interactive web applications with simple Python scripts. <strong>For installation use,</strong> <code>pip install streamlit</code></p>
+</li>
+<li>
+<p><strong><a href="https://www.databutton.io/">DataButton</a></strong> is an online workspace for creating full-stack web apps in Python. From writing Python scripts to building a web app in Streamlit framework and finally to deployment in the server— all come in a single workspace. <em><strong>Moreover, you can skip the above packages installation steps. Instead, directly plug-in those package name in the configuration space which DataButton provides and leave the rest on DataButton to handle !</strong></em> You can gain free access to their tools by signing up and start building one for yourself.</p>
+</li>
+</ul>
+<h3>Workflow</h3>
+<p><strong>Model</strong>: We will be using the very latest, ChatGPT API, the GPT-3.5-Turbo large language model which OpenAI offers - that can understand as well as generate natural language or code. <em><strong>As Open AI claims it is one of the most capable and cost-effective models they offer at this moment in the GPT3.5 family.</strong></em> ( read more <a href="https://platform.openai.com/docs/models/gpt-3-5">here</a> )</p>
+<p><img alt="" src="https://miro.medium.com/1*nfpdZevVlSmSUjqKv7pSbw.png" /></p>
+<p><strong><a href="https://langchain.readthedocs.io/en/latest/modules/memory/getting_started.html#using-in-a-chain">ConversationChain</a> and <a href="https://langchain.readthedocs.io/en/latest/modules/memory/key_concepts.html#key-concepts">Memory</a>:</strong> One of the key core components which LangChain provides us with are - chains. <a href="https://medium.com/@avra42/getting-started-with-langchain-a-powerful-tool-for-working-with-large-language-models-286419ba0842">Please refer to my earlier blog post to have a detailed understanding</a> on how it works and one of its use-cases in integrating LLMs.</p>
+<p>We will use a combination of <strong>chains</strong>: <code>ConversationChain</code> (has a simple type of memory that remembers all previous inputs/outputs and adds them to the context that is passed) and <strong>memory</strong> comprising of (a) buffer, which can accept the <em>n</em> number of user interactions as context (b) summary, that can summarize the past conversations. At times both (a) and (b) can be included together as a memory.</p>
+<p>We will try to implement a relatively sophisticated memory called <a href="https://langchain.readthedocs.io/en/latest/modules/memory/key_concepts.html#entity-memory">"Entity Memory"</a> , compared to other available memory available in this module. EntityMemory is best defined in LangChain AI's official docs,
+<em>"A more complex form of memory is remembering information about specific entities in the conversation. This is a more direct and organized way of remembering information over time. Putting it in a more structured form also has the benefit of allowing easy inspection of what is known about specific entities"</em></p>
+<p><strong>Front-end development:</strong> To build the chatbot, we'll be using the online DataButton platform which has a in-built code editor ( <em>IDE</em> ), a package plus configuration maintenance environment, alongside with a space to view the development in real-time ( i.e. <em>localhost</em> ). Since DataButton utilizes the Streamlit framework, the code can be written with simple Streamlit syntax.</p>
+<p><img alt="" src="https://miro.medium.com/1*GvitPIDZKylwKbpbdU4wiQ.png" /></p>
+<p>Alternatively, the entire front-end process can also be developed locally via typical Streamlit-Python Web app development workflow which I've discussed several times over my YouTube / blog posts tutorial. Briefly, it follow,</p>
+<ul>
+<li>
+<p>Writing and testing the code locally in the computer</p>
+</li>
+<li>
+<p>Adding the dependencies as <code>requirements.txt</code> file</p>
+</li>
+<li>
+<p>Pushing to the GitHub and deployment over the <a href="https://streamlit.io/cloud">Streamlit cloud</a></p>
+</li>
+</ul>
+<p>Please refer to my other Streamlit-based blog posts and YouTube tutorials.</p>
+<p><img alt="" src="https://miro.medium.com/1*o1nb8D-2qpBn15DUf54kPA.png" /></p>
+<p>Moreover, both the above-mentioned methods, at this moment allows free-hosting of web apps. Please refer to the respective official websites for further details.</p>
+<h2>The Code</h2>
+<p>We will now move to the main section of developing our Memory Bot with very few lines of python syntax.</p>
+<ul>
+<li>We will start with <strong>importing necessary libraries</strong> ,</li>
+</ul>
+<p>```javascript</p>
+<p>import streamlit as st
+from langchain.chains import ConversationChain
+from langchain.chains.conversation.memory import ConversationEntityMemory
+from langchain.chains.conversation.prompt import ENTITY_MEMORY_CONVERSATION_TEMPLATE
+from langchain.llms import OpenAI
+```</p>
+<ul>
+<li>Followed by , <strong>setting up the Streamlit page configuration</strong>. Not critical, but can be a nice UI add-on to the Web App. ( r<a href="https://docs.streamlit.io/library/api-reference/utilities/st.set_page_config">efer to the doc</a> )</li>
+</ul>
+<p><code>bash
+st.set_page_config(page_title='🧠MemoryBot🤖', layout='wide')</code></p>
+<ul>
+<li><strong>Initialize session states</strong>. One of t<strong>he critical steps</strong> - since the conversation between the user input, as well as the memory of '<em>chains of thoughts</em>' needs to be stored at every reruns of the app</li>
+</ul>
+<p>Session state is useful to store or cache variables to avoid loss of assigned variables during default workflow/rerun of the Streamlit web app. I've discussed this in my previous <a href="https://medium.com/dev-genius/streamlit-python-tips-how-to-avoid-your-app-from-rerunning-on-every-widget-click-cae99c5189eb">blog posts</a> and <a href="https://youtu.be/dPdB7zyGttg">video</a> as well - do refer to them. Also( <a href="https://docs.streamlit.io/library/api-reference/session-state">refer to the official doc</a> ).</p>
+<p><code>bash
+if "generated" not in st.session_state:
+    st.session_state["generated"] = []
+if "past" not in st.session_state:
+    st.session_state["past"] = []
+if "input" not in st.session_state:
+    st.session_state["input"] = ""
+if "stored_session" not in st.session_state:
+    st.session_state["stored_session"] = []</code></p>
+<ul>
+<li><strong>We'll define a function to get the user input.</strong> Typically not necessary to wrap within a function, but why not ...</li>
+</ul>
+<p><code>python
+def get_text():
+    """
+    Get the user input text.
+    Returns:
+        (str): The text entered by the user
+    """
+    input_text = st.text_input("You: ", st.session_state["input"], key="input",
+                            placeholder="Your AI assistant here! Ask me anything ...", 
+                            label_visibility='hidden')
+    return input_text</code></p>
+<ul>
+<li><strong>Additional feature : Start a new chat,</strong> at times - we might want our Memory Bot to erase its memory / context of the conversation and start a new one. This function can be super useful in such circumstances,</li>
+</ul>
+<p><code>python
+def new_chat():
+    """
+    Clears session state and starts a new chat.
+    """
+    save = []
+    for i in range(len(st.session_state['generated'])-1, -1, -1):
+        save.append("User:" + st.session_state["past"][i])
+        save.append("Bot:" + st.session_state["generated"][i])        
+    st.session_state["stored_session"].append(save)
+    st.session_state["generated"] = []
+    st.session_state["past"] = []
+    st.session_state["input"] = ""
+    st.session_state.entity_memory.store = {}
+    st.session_state.entity_memory.buffer.clear()</code></p>
+<ul>
+<li><strong>Some config for a user to play with:</strong> Options to preview the buffer and the memory. Also changing to different GPT-3 offered models.</li>
+</ul>
+<p>```python
+with st.sidebar.expander(" 🛠 ️ Settings ", expanded=False):
+    # Option to preview memory store
+    if st.checkbox("Preview memory store"):
+        st.write(st.session_state.entity_memory.store)
+    # Option to preview memory buffer
+    if st.checkbox("Preview memory buffer"):
+        st.write(st.session_state.entity_memory.buffer)
+    MODEL = st.selectbox(label='Model', options=['gpt-3.5-turbo','text-davinci-003','text-davinci-002','code-davinci-002'])
+    K = st.number_input(' (#)Summary of prompts to consider',min_value=3,max_value=1000)</p>
+<p>```</p>
+<ul>
+<li><strong>Set up the App Layout and widget to accept secret API key</strong></li>
+</ul>
+<p>```python</p>
+<h1>Set up the Streamlit app layout</h1>
+<p>st.title("🧠 Memory Bot 🤖")
+st.markdown(
+        ''' 
+        &gt; :black[<strong>A Chatbot that remembers,</strong>  <em>powered by -  <a href="" title="https://langchain.readthedocs.io/en/latest/modules/memory.html#memory">LangChain</a> + 
+        <a href="" title="https://platform.openai.com/docs/models/gpt-3-5">OpenAI</a> + 
+        <a href="" title="https://streamlit.io">Streamlit</a> + <a href="https://www.databutton.io/">DataButton</a></em>]
+        ''')</p>
+<h1>st.markdown(" &gt; Powered by -  🦜 LangChain + OpenAI + Streamlit")</h1>
+<h1>Ask the user to enter their OpenAI API key</h1>
+<p>API_O = st.sidebar.text_input(":blue[Enter Your OPENAI API-KEY :]", 
+                placeholder="Paste your OpenAI API key here (sk-...)",
+                type="password") # Session state storage would be ideal
+```</p>
+<p><strong>Creating key Objects:</strong> This is a very crucial part of the code</p>
+<ul>
+<li>
+<p><strong>Open AI Instance</strong> needs to be created which will be later called</p>
+</li>
+<li>
+<p><strong>ConversationEntityMemory</strong> is stored as session state</p>
+</li>
+<li>
+<p><strong>ConversationChain</strong> is initiated.</p>
+</li>
+</ul>
+<p>Storing the Memory as Session State is pivotal otherwise the memory will get lost during the app re-run. A perfect example to use Session State while using Streamlit.</p>
+<p>```python
+if API_O:
+    # Create an OpenAI instance
+    llm = OpenAI(temperature=0,
+                openai_api_key=API_O, 
+                model_name=MODEL, 
+                verbose=False) </p>
+<pre><code># Create a ConversationEntityMemory object if not already created
+if 'entity_memory' not in st.session_state:
+        st.session_state.entity_memory = ConversationEntityMemory(llm=llm, k=K )
+
+    # Create the ConversationChain object with the specified configuration
+Conversation = ConversationChain(
+        llm=llm, 
+        prompt=ENTITY_MEMORY_CONVERSATION_TEMPLATE,
+        memory=st.session_state.entity_memory
+    )
+</code></pre>
+<p>else:
+    st.markdown(''' 
+        ```
+        - 1. Enter API Key + Hit enter 🔐  </p>
+<pre><code>    - 2. Ask anything via the text input widget
+
+    Your API-key is not stored in any form by this app. However, for transparency ensure to delete your API once used.
+    ```
+
+    ''')
+st.sidebar.warning('API key required to try this app.The API key is not stored in any form.')
+# st.sidebar.info("Your API-key is not stored in any form by this app. However, for transparency ensure to delete your API once used.")
+</code></pre>
+<p>```</p>
+<ul>
+<li><strong>Implementing a Button to Clear the memory</strong> and calling the <code>new_chat()</code> function which we wrote about earlier,</li>
+</ul>
+<p><code>bash
+st.sidebar.button("New Chat", on_click = new_chat, type='primary')</code></p>
+<ul>
+<li><strong>Get the user INPUT and RUN the chain. Also, store them</strong> - that can be dumped in the future in a chat conversation format.</li>
+</ul>
+<p><code>lua
+user_input = get_text()
+if user_input:
+    output = Conversation.run(input=user_input)  
+    st.session_state.past.append(user_input)
+    st.session_state.generated.append(output)</code></p>
+<ul>
+<li><strong>Display the conversation history using an expander, and allow the user to download it.</strong></li>
+</ul>
+<p>```python</p>
+<h1>Allow to download as well</h1>
+<p>download_str = []</p>
+<h1>Display the conversation history using an expander, and allow the user to download it</h1>
+<p>with st.expander("Conversation", expanded=True):
+    for i in range(len(st.session_state['generated'])-1, -1, -1):
+        st.info(st.session_state["past"][i],icon="🧐")
+        st.success(st.session_state["generated"][i], icon="🤖")
+        download_str.append(st.session_state["past"][i])
+        download_str.append(st.session_state["generated"][i])</p>
+<pre><code># Can throw error - requires fix
+download_str = '\n'.join(download_str)
+if download_str:
+    st.download_button('Download',download_str)
+</code></pre>
+<p>```</p>
+<ul>
+<li><strong>Additional features ( <em>not well tested ...</em>)</strong></li>
+</ul>
+<p>```python</p>
+<h1>Display stored conversation sessions in the sidebar</h1>
+<p>for i, sublist in enumerate(st.session_state.stored_session):
+        with st.sidebar.expander(label= f"Conversation-Session:{i}"):
+            st.write(sublist)</p>
+<h1>Allow the user to clear all stored conversation sessions</h1>
+<p>if st.session_state.stored_session: <br />
+    if st.sidebar.checkbox("Clear-all"):
+        del st.session_state.stored_session
+```</p>
+<p>We have built the Memory Bot app ✅</p>
+<p><strong>How does the app look now ? - a quick demo,</strong></p>
+<p><img alt="A quick demo of the app we build. What's new here - The MemoryBot remembers my name and country of living, which is already an added feature compared to traditional chatbots. You can also download the conversation and start a new topic. This app can be extended further. Play around with it and its settings. Have fun!" src="https://miro.medium.com/1*WZWR-lX88mJWQMrMQa1BYA.gif" /></p>
+<p>We can deploy our app from the local host to the DataButton server, using the publish page button (alternatively, you can also push to GitHub and serve in Streamlit Cloud ). A unique link will be generated which can be shared with anyone globally. For instance, I've deployed the Web App already in the DataButton server ( link to the <a href="https://next.databutton.com/v/lgzxq112/Memory_Bot">live app</a> ).</p>
+<p><em>Refer to my YouTube video on this very similar aspect and live code each steps with me in 15 mins,</em></p>
+<iframe src="https://cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.youtube.com%2Fembed%2FcHjlperESbg%3Ffeature%3Doembed&display_name=YouTube&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DcHjlperESbg&image=https%3A%2F%2Fi.ytimg.com%2Fvi%2FcHjlperESbg%2Fhqdefault.jpg&key=a19fcc184b9711e1b4764040d3dc5c07&type=text%2Fhtml&schema=youtube" title="" height="480" width="854"></iframe>
+
+<h2>Conclusion</h2>
+<p>We have successfully built a Memory Bot that is well aware of the conversations and context and also provides real human-like interactions. I strongly feel this memory bot can be further personalized with our own datasets and extended with more features. Soon, I'll be coming with a new blog post and a video tutorial to explore LLM with front-end implementation.</p>
+<p>👨🏾 ‍💻  G<a href="https://github.com/avrabyt">itHub </a>⭐️| 🐦  T<a href="https://twitter.com/avra_b">witter </a>| 📹  Y<a href="https://www.youtube.com/@Avra_b">ouTube </a>| ☕️ B<a href="https://www.buymeacoffee.com/AvraCodes">uyMeaCoffee </a>| K<a href="https://ko-fi.com/avrabyt">o-fi💜 </a></p>
+<p><em><strong>Hi there! I'm always on the lookout for sponsorship, affiliate links, and writing/coding gigs to keep broadening my online content. Any support, feedback and suggestions are very much appreciated! Interested? Drop an email here: avrab.yt@gmail.com</strong></em></p>
+<p><em><a href="https://patreon.com/user?u=82100262&amp;utm_medium=clipboard_copy&amp;utm_source=copyLink&amp;utm_campaign=creatorshare_creator&amp;utm_content=join_link">Also consider becoming my Patreon Member ? - you'll get access to exclusive content, codes, or videos beforehand, one-to-one web app development / relevant discussion, live-chat with me on specific videos and other perks. ( FYI : Basic Tier is 50% cheaper than ChatGPT/monthly with benefits which an AI can't help with 😉  )</a></em></p>
+<hr />
+<h3>Related Blogs</h3>
+<ol>
+<li>
+<p><a href="https://medium.com/@avra42/getting-started-with-langchain-a-powerful-tool-for-working-with-large-language-models-286419ba0842">Getting started with LangChain - A powerful tool for working with Large Language Models</a></p>
+</li>
+<li>
+<p><a href="https://medium.com/@avra42/summarizing-scientific-articles-with-openai-and-streamlit-fdee12aa1a2b?source=rss-bf79cad6afa1------2">Summarizing Scientific Articles with OpenAI ✨ and Streamlit</a></p>
+</li>
+<li>
+<p><a href="https://medium.com/@avra42/build-your-own-chatbot-with-openai-gpt-3-and-streamlit-6f1330876846?source=rss-bf79cad6afa1------2">Build Your Own Chatbot with openAI GPT-3 and Streamlit</a></p>
+</li>
+<li>
+<p><a href="https://medium.com/@avra42/how-to-stream-output-in-chatgpt-style-while-using-openai-completion-method-b90331c15e85">How to ‘stream' output in ChatGPT style while using openAI Completion method</a></p>
+</li>
+<li>
+<p><a href="https://medium.com/@avra42/chatgpt-build-this-data-science-web-app-using-streamlit-python-25acca3cecd4?source=rss-bf79cad6afa1------2">ChatGPT helped me to built this Data Science Web App using Streamlit-Python</a></p>
+</li>
+</ol>
+<h3>Recommended YouTube Playlists</h3>
+<ol>
+<li>
+<p><a href="https://youtube.com/playlist?list=PLqQrRCH56DH82KNwvlWpgh3YJXu461q69">OpenAI - Streamlit Web Apps</a></p>
+</li>
+<li>
+<p><a href="https://youtube.com/playlist?list=PLqQrRCH56DH8JSoGC3hsciV-dQhgFGS1K">Streamlit-Python-Tutorials</a></p>
+</li>
+</ol>
+<h3>Links, references, and credits</h3>
+<ol>
+<li>
+<p>LangChain Docs : <a href="https://langchain.readthedocs.io/en/latest/index.html">https://langchain.readthedocs.io/en/latest/index.html</a></p>
+</li>
+<li>
+<p>LangChain GitHub Repo : <a href="https://github.com/hwchase17/langchain">https://github.com/hwchase17/langchain</a></p>
+</li>
+<li>
+<p>Streamlit : <a href="https://streamlit.io/">https://streamlit.io/</a></p>
+</li>
+<li>
+<p>DataButton : <a href="https://www.databutton.io/">https://www.databutton.io/</a></p>
+</li>
+<li>
+<p><a href="https://platform.openai.com/docs/api-reference/completions/create#completions/create-stream">Open AI document</a></p>
+</li>
+<li>
+<p><a href="https://platform.openai.com/docs/models/gpt-3-5">Open AI GPT 3.5 Model family</a></p>
+</li>
+</ol>
+<hr />
+<h3>Thank you for your time in reading this post! Make sure to leave your feedback and comments. See you in the next blog, stay tuned 🤖</h3>

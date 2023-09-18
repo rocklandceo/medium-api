@@ -1,0 +1,115 @@
+<h1>Building a PDF Chatbot with Streamlit and LangChain</h1>
+<p>In this tutorial, we'll walk you through the process of creating a simple PDF chatbot using Streamlit and LangChain libraries. The chatbot will allow users to upload a PDF file and ask questions related to its content.</p>
+<p><code>python
+from langchain.vectorstores import FAISS
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings.openai import OpenAIEmbeddings
+from PyPDF2 import PdfReader
+import streamlit as st
+import os
+import fitz
+from PIL import Image</code></p>
+<p>In this step, We import the necessary libraries for our chatbot, including those from LangChain and Streamlit.</p>
+<ul>
+<li>
+<p><code>langchain</code>: This library provides tools for natural language processing tasks like text splitting, embeddings, and more.</p>
+</li>
+<li>
+<p><code>FAISS</code>: A library for efficient similarity search and clustering of dense vectors. It's used to store and retrieve chunks of text.</p>
+</li>
+<li>
+<p><code>ChatOpenAI</code>: A chat model from LangChain used for generating responses.</p>
+</li>
+<li>
+<p><code>ConversationalRetrievalChain</code>: A chain that combines a chat model, retriever, and memory to create a conversational retrieval system.</p>
+</li>
+<li>
+<p><code>ConversationBufferMemory</code>: A memory system that stores and retrieves conversations for the chatbot.</p>
+</li>
+<li>
+<p><code>RecursiveCharacterTextSplitter</code>: A text splitter for dividing text into smaller chunks.</p>
+</li>
+<li>
+<p><code>OpenAIEmbeddings</code>: A tool for generating embeddings for text using OpenAI models.</p>
+</li>
+<li>
+<p><code>PdfReader</code>: A library for reading PDF files and extracting text from them.</p>
+</li>
+<li>
+<p><code>streamlit</code>: A library for creating interactive web applications.</p>
+</li>
+</ul>
+<p>Step 2: Initialize Streamlit</p>
+<p><code>python
+st.title("PDF Chatbot")</code></p>
+<p>Here, we set the title of our Streamlit app to "PDF Chatbot."</p>
+<p>Step 3: Load PDF Text and Create Conversation Chain</p>
+<p><code>python
+def process_pdf(file_path):
+    pdf_reader = PdfReader(file_path)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text</code></p>
+<p>Explanation:</p>
+<ul>
+<li>
+<p>The <code>process_pdf</code> function takes a PDF file path as input, reads the PDF using <code>PdfReader</code>, and extracts text from each page using the <code>extract_text()</code> method.</p>
+</li>
+<li>
+<p>This function is used to process the PDF and convert it into text that the chatbot can work with.</p>
+</li>
+</ul>
+<p>Step 4: Generate Response Based on Chat History and Query</p>
+<p><code>python
+def generate_response(chain, history, query):
+    result = chain(
+        {"question": query, 'chat_history': history}, return_only_outputs=True)
+    return result["answer"]</code></p>
+<p>Explanation:</p>
+<ul>
+<li>
+<p>The <code>generate_response</code> function takes the conversation chain, chat history, and user query as inputs.</p>
+</li>
+<li>
+<p>It generates a response by passing the query and chat history to the chain and returning the generated answer.</p>
+</li>
+</ul>
+<p>Step 5: Main Function</p>
+<p>```python
+def main():
+    os.environ['OPENAI_API_KEY'] = "sk-Ha24nR6JqwgAdtx1kIZuEzQKd65b5q3c" # provide your key
+    st.write("Upload a PDF file:")
+    pdf_file = st.file_uploader("Choose a PDF file", type="pdf")
+    query = st.text_input("Enter a question:", "")</p>
+<pre><code>if pdf_file is not None:
+    text = process_pdf(pdf_file)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = splitter.split_text(text)
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_texts(texts=chunks, embedding=embeddings)
+    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+    chain = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0.3),
+                                                 retriever=vectorstore.as_retriever(),
+                                                 memory
+</code></pre>
+<p>```</p>
+<ul>
+<li>
+<p>The <code>main</code> function is the core of the application.</p>
+</li>
+<li>
+<p>It uses Streamlit's interactive components to allow users to upload a PDF file and enter a question.</p>
+</li>
+<li>
+<p>When the "Search" button is clicked, the application processes the PDF, creates a conversation chain, and generates a response.</p>
+</li>
+<li>
+<p>The response is displayed using Streamlit's <code>st.write</code> function.</p>
+</li>
+</ul>
+<p>This script creates a simple web-based PDF chatbot using the Streamlit library and the LangChain library for natural language processing. Users can upload a PDF file, ask questions about its content, and receive responses generated by the chatbot.</p>
+<p><img alt="" src="https://miro.medium.com/1*ll0r6u0cGzBteD4M35zShQ.png" /></p>

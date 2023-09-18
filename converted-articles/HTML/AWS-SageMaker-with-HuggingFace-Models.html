@@ -1,0 +1,667 @@
+<h1>AWS SageMaker real-time endpoints with HuggingFace Embedding Models: A Guide for LLM Application</h1>
+<p>and how to ingest embedding data into vector database with real-time inference embedding endpoint with Langchain</p>
+<p>I'm not entirely sure if I should officially label this as "part 2" of the series building a Chatbot app that's totally unique compared to 99% of the tutorials out there on the internet and is production-ready. 
+The content we'll cover here sets the groundwork for the rest of our Chatbot journey. Even though I haven't explicitly labelled it as "part 2," I assure you it's a mandatory step. So, let's roll up our sleeves and get ready for some exciting progress!</p>
+<blockquote>
+<p><a href="https://medium.com/how-ai-built-this/zero-to-one-a-guide-to-building-a-first-pdf-chatbot-with-langchain-llamaindex-part-1-7d0e9c0d62f"><strong>Zero to One: A Guide to Building a First PDF Chatbot with LangChain &amp; LlamaIndex - Part 1</strong></a></p>
+</blockquote>
+<p>The concept of embedding plays a crucial role in any LLM Application. Whether you're creating a toy app, a PoC, or showcasing your product, this article can be beneficial. However, if your goal is to build a robust LLM app that can handle a large user base and scale effectively, this is precisely the article you need to focus on.</p>
+<p>If you need a refreshment of choosing the embedding model, please refer to my previous article here:</p>
+<blockquote>
+<p><a href="https://medium.com/@ryanntk/choosing-the-right-embedding-model-a-guide-for-llm-applications-7a60180d28e3"><strong>Choosing the Right Embedding Model: A Guide for LLM Applications</strong></a></p>
+</blockquote>
+<h2>Frustrations with Superficial Articles on the Search for an In-Depth Guide</h2>
+<p>Before I started, I want to highlight the frustration and the reason I want to write this article.</p>
+<p>I've often come across articles with enticing titles like "Develop Your Own AI to Read Your Documents" or "Develop AI Applications with Langchain/Llamaindex." However, I've noticed that most of these articles tend to be quite basic, lacking in-depth discussions on the topics they promise to cover. It appears that many of these articles simply regurgitate information from official documents without providing any meaningful analysis or technical insights. This trend is also evident when searching for articles on Hugging Face's embedding.</p>
+<p><img alt="Photo by Tim Gouw on Unsplash" src="https://miro.medium.com/0*2bfq-L3nNBipaJS1" /></p>
+<p>Please understand that I do appreciate the value of these articles for individuals who are new to the subject matter and seek introductory information. However, as someone who delves into intricate technical details and craves in-depth exploration, I find these articles lacking in substance. It seems that the popularity of certain topics has led to an overwhelming number of articles covering the same information, resulting in a monotonous and uninteresting feed on platforms like Medium.</p>
+<p>Personally, I have been searching for a comprehensive guide on deploying any Hugging Face's embedding model to AWS Sagemaker, but to no avail. Instead, I repeatedly encounter similar articles authored by different individuals, all offering a summary of the basic steps to deploy a Hugging Face embedding model to Sagemaker. The frustrating part is that they all seem to use the same Hugging Face model and even the same instance type.</p>
+<p>What I truly desire is an in-depth, step-by-step tutorial that starts from scratch and guides me through the entire deployment process. Regrettably, I haven't been able to find such a guide. Consequently, I have taken it upon myself to write an article that may prove interesting and helpful to anyone else who has experienced this same struggle.</p>
+<h2>On a Side Note</h2>
+<p>I've started the AI weekly newsletter to keep you updated on all the exciting happenings in the world of AI. It's a curated summary of engineer resources, AI startup spotlights, and the latest research from brilliant minds in the field, delivered straight to your inbox every week.</p>
+<p>The best part? It's designed to be a quick read, taking you only about 5 minutes to get up to speed with the most important developments in AI. So, if you're eager to stay informed without spending too much time, this newsletter is perfect for you.</p>
+<p>Check out my Substack and subscribe to stay in the loop with the latest AI trends and advancements</p>
+<blockquote>
+<p><a href="https://howaibuildthis.substack.com/s/ai-weekly"><strong>AI Weekly | How AI Built This | Ryan Nguyen | Substack</strong></a></p>
+</blockquote>
+<h2>AWS Sagemaker</h2>
+<p>Over the past 8 years, I've had the pleasure of working extensively with a variety of AWS products. When it comes to developing prototypes or MVPs, AWS has always been my top choice. I've built and designed multiple data platforms for companies of all sizes, from startups to large corporations. AWS is like the OG in the game, but I'll be honest, sometimes I wish their services were a bit easier to use. In fact, there have been entire startups created solely to make AWS more user-friendly.</p>
+<p>Having said that, AWS's machine learning platform isn't my personal favourite. It can be a bit tricky to navigate and often leads to confusion. On the other hand, in the world of data engineering, both in my current company and previous ones, we tend to lean towards Databricks for most of our development work. Databricks is a breeze to use and a great tool for working with data and developing data lakehouse platforms. It also provides an awesome platform for data scientists and machine learning enthusiasts to build and deploy models. The only downside is that Databricks can be a bit pricey, but hey, you get what you pay for, and Databricks delivers.</p>
+<p><img alt="" src="https://miro.medium.com/0*RG_jvnXtUJYHwfWf.jpg" /></p>
+<p>From a technical standpoint, AWS offers all the features and capabilities that Databricks provides, and in some aspects, even surpasses it. AWS stands out because its services are well-integrated and easily usable together. Building machine learning platforms or data platforms on top of AWS is a breeze, as you don't have to worry about the underlying infrastructure.</p>
+<blockquote>
+<p>Speaking honestly, AWS Sagemaker is an "okay" product.</p>
+</blockquote>
+<p>While it can be difficult to use, and the notebook environment sucks, the overall functionality is acceptable. If your company heavily invests in AWS and utilizes it across all products, then it's highly likely you'll default to using AWS Sagemaker. As for us, and specifically for me, Sagemaker serves as the final step in the deployment process, thanks to its convenient endpoint deployment and seamless integration with API Gateway, Lambda, and ECS.</p>
+<p>Recently, what piqued my interest and drew me back to working with Sagemaker is its partnership with Hugging Face. If you're reading this blog, you're probably a skilled engineer in the data space, be it a data engineer or a machine learning engineer, and I'm confident you're familiar with Hugging Face. Personally, I'm a huge fan of Hugging Face, and their collaboration with AWS has significantly bolstered the capabilities of Sagemaker.</p>
+<p><img alt="" src="https://miro.medium.com/0*UmZBTYI2Sc_qqQsY.png" /></p>
+<p>In this article, I won't dive into the nitty-gritty details of Sagemaker or how to use it. I also won't talk about building embedding models or using Hugging Face. If you're interested, I can cover those topics in future articles. For now, let's focus on the main topic: how to deploy any Hugging Face embedding model to AWS Sagemaker. It's going to be a fun and informative journey, so stick around!</p>
+<h2>Prerequisite</h2>
+<ol>
+<li>
+<p>You need to have an AWS account. If you don't already have one, then please create a new one.</p>
+</li>
+<li>
+<p>I want to state again that this guide is not a tutorial on Sagemaker, it is also not a tutorial on how to use Hugging Face, nor one about how to build custom embedding.</p>
+</li>
+<li>
+<p>In fact, you don't even need to know Sagemaker, just think about it as a platform where we are going to deploy our embedding model.</p>
+</li>
+</ol>
+<h2>Hugging Face on Amazon Sagemaker</h2>
+<p>If you are interested in how to deploy the Hugging Face model to Amazon Sagemaker, you can go through the official hugging face document here</p>
+<blockquote>
+<p><a href="https://huggingface.co/docs/sagemaker/index"><strong>Hugging Face on Amazon SageMaker</strong></a></p>
+</blockquote>
+<p>In this post, we will cover one thing which is "<strong>How to deploy any Hugging Face embedding model on AWS Sagemaker</strong>".</p>
+<p>Traditionally, the <a href="https://github.com/aws/sagemaker-huggingface-inference-toolkit">SageMaker Hugging Face Inference Toolkit</a> supports the <a href="https://huggingface.co/transformers/main_classes/[pipelines](https://huggingface.co/transformers/main_classes/pipelines.html).html">pipeline feature</a> from Transformers for zero-code deployment. This means you can run compatible Hugging Face Transformer models without providing pre- &amp; post-processing code. Therefore we only need to provide an environment variable <code>HF_TASK</code> and <code>HF_MODEL_ID</code> when creating our endpoint and the Inference Toolkit will take care of it. This is a great feature if you are working with existing pipelines. To deploy any hugging face model on AWS Sagemaker, it is super simple this following code</p>
+<p>```python
+from sagemaker.huggingface.model import HuggingFaceModel</p>
+<h1>Hub model configuration <a href="https://huggingface.co/models">https://huggingface.co/models</a></h1>
+<p>hub = {
+  'HF_MODEL_ID':'distilbert-base-uncased-distilled-squad', # model_id from hf.co/models
+  'HF_TASK':'question-answering'                           # NLP task you want to use for predictions
+}</p>
+<h1>create Hugging Face Model Class</h1>
+<p>huggingface_model = HuggingFaceModel(
+   env=hub,                                                # configuration for loading model from Hub
+   role=role,                                              # IAM role with permissions to create an endpoint
+   transformers_version="4.26",                             # Transformers version used
+   pytorch_version="1.13",                                  # PyTorch version used
+   py_version='py39',                                      # Python version used
+)</p>
+<h1>deploy model to SageMaker Inference</h1>
+<p>predictor = huggingface_model.deploy(
+   initial_instance_count=1,
+   instance_type="ml.m5.xlarge"
+)</p>
+<h1>example request: you always need to define "inputs"</h1>
+<p>data = {
+"inputs": {
+ "question": "What is used for inference?",
+ "context": "My Name is Philipp and I live in Nuremberg. This model is used with sagemaker for inference."
+ }
+}</p>
+<h1>request</h1>
+<p>predictor.predict(data)
+```</p>
+<ul>
+<li>
+<p><code>HF_MODEL_ID</code> defines the model ID which is automatically loaded from <a href="http://huggingface.co/models">huggingface.co/models</a> when you create a SageMaker endpoint. Access 10,000+ models on the 🤗 Hub through this environment variable.</p>
+</li>
+<li>
+<p><code>HF_TASK</code> defines the task for the 🤗 Transformers p<code>ipeline.</code> A complete list of tasks can be found h<a href="https://huggingface.co/docs/transformers/main_classes/pipelines">ere.</a></p>
+</li>
+</ul>
+<p>But HF_TASK does not have an embedding task yet. Therefore, we will need to custom code to serve the embedding endpoint.</p>
+<h3>What about embedding tasks?</h3>
+<p>By default, AWS Sagemaker officially supports these embedding models. It means if you want to use this model, you don't have to do anything extra. Just need to follow this notebook to deploy the supported embedding model.</p>
+<p>But what if the official model is not the one you want? In fact, if you look at the hugging face's leaderboard, these embedding models are nowhere in the top rank of the data retrieval benchmark.</p>
+<p>Luckily, the Hugging Face Inference Toolkit allows the user to override the default methods of the <code>HuggingFaceHandlerService</code>. You will need to create a folder named <code>code/</code> with an <code>inference.py</code> file in it. See <a href="https://huggingface.co/docs/sagemaker/inference#create-a-model-artifact-for-deployment">here</a> for more details on how to archive your model artifacts. For example:</p>
+<p><img alt="" src="https://miro.medium.com/1*Wf8_7cdcL8WLEBQRsdhvGg.png" /></p>
+<p>The <code>inference.py</code> file contains your custom inference module and the <code>requirements.txt</code> file contains additional dependencies that should be added. The custom module can override the following methods:</p>
+<ul>
+<li>
+<p><strong><code>model_fn(model_dir)</code></strong> overrides the default method for loading a model. The return value <code>model</code> will be used in <code>predict</code> for predictions. <code>predict</code> receives argument the <code>model_dir</code>, the path to your unzipped <code>model.tar.gz</code>.</p>
+</li>
+<li>
+<p><strong><code>transform_fn(model, data, content_type, accept_type)</code></strong> overrides the default transform function with your custom implementation. You will need to implement your own <code>preprocess</code>, <code>predict</code> and <code>postprocess</code> steps in the <code>transform_fn</code>. This method can't be combined with <code>input_fn</code>, <code>predict_fn</code> or <code>output_fn</code> mentioned below.</p>
+</li>
+<li>
+<p><strong><code>input_fn(input_data, content_type)</code></strong> overrides the default method for preprocessing. The return value <code>data</code> will be used in <code>predict</code> for predictions. The inputs are:
+<code>- input_data</code> is the raw body of your request.
+<code>- content_type</code> is the content type from the request header.</p>
+</li>
+<li>
+<p><strong><code>predict_fn(processed_data, model)</code></strong> overrides the default method for predictions. The return value <code>predictions</code> will be used in <code>postprocess</code>. The input is <code>processed_data</code>, the result from <code>preprocess</code>.</p>
+</li>
+<li>
+<p><strong><code>output_fn(prediction, accept)</code></strong> overrides the default method for postprocessing. The return value <code>result</code> will be the response to your request (e.g.<code>JSON</code>). The inputs are:
+<code>- predictions</code> is the result from <code>predict</code>.
+<code>- accept</code> is the return accept type from the HTTP Request, e.g. <code>application/json</code></p>
+</li>
+</ul>
+<h2>Development Environment</h2>
+<p>First, you need to create a custom IAM Role. You will need to use this role for most of your work so go ahead and create one.</p>
+<p><code>yaml
+Role:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: SageMakerIAMRole
+    Policies:
+      - PolicyName: CustomerSagemakerPolicyAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Sid: ReadFromOpenSearch
+              Effect: Allow
+              Action:
+                - "es:ESHttp*"
+              Resource:
+                - !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*
+            - Sid: ReadSecretFromSecretsManager
+              Effect: Allow
+              Action:
+                - "secretsmanager:GetSecretValue"
+              Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
+            - Sid: ReadWriteFromECR
+              Effect: Allow
+              Action:
+                - "ecr:BatchGetImage"
+                - "ecr:BatchCheckLayerAvailability"
+                - "ecr:CompleteLayerUpload"
+                - "ecr:DescribeImages"
+                - "ecr:DescribeRepositories"
+                - "ecr:GetDownloadUrlForLayer"
+                - "ecr:InitiateLayerUpload"
+                - "ecr:ListImages"
+                - "ecr:PutImage"
+                - "ecr:UploadLayerPart"
+                - "ecr:CreateRepository"
+                - "ecr:GetAuthorizationToken"
+                - "ec2:DescribeAvailabilityZones"
+              Resource: "*"
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+      - arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess
+      - arn:aws:iam::aws:policy/TranslateReadOnly
+    AssumeRolePolicyDocument:
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - sagemaker.amazonaws.com
+          Action:
+            - 'sts:AssumeRole'</code></p>
+<p>If you want to use your local notebook, you need to note down the role name you've created above to manually set it in the code later.</p>
+<p><strong>The next step is optional:</strong> You can accomplish this guide with your local notebook environment and memory vector database with Chroma. However, if you want to have something serious, you can create a notebook instance along with the OpenSeach service.
+With AWS Free Tier, you can have <em><strong>250 hours free of ml.t3.medium instance and up to 750 hours per month of a t2.small.search or t3.small.search instance</strong></em></p>
+<p>Here is yaml file, it basically created a notebook instance and OpenSearch instance.</p>
+<p>```yaml
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to provision OpenSearch cluster and SageMaker Notebook for semantic search</p>
+<p>Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Required Parameters
+        Parameters:
+          - OpenSearchUsername
+          - OpenSearchPassword
+          - OpenSearchIndexName
+          - SageMakerNotebookName
+    ParameterLabels:    <br />
+      OpenSearchUsername:
+        default: OpenSearch cluster username
+      OpenSearchPassword:
+        default: OpenSearch cluster password
+      OpenSearchIndexName:
+        default: OpenSearch index name
+      SageMakerNotebookName:
+        default: Name of SageMaker Notebook Instance</p>
+<p>Parameters:
+  OpenSearchUsername:
+    AllowedPattern: '^[a-zA-Z0-9]+$'
+    Default: opensearchuser
+    Description: User name for the account that will be added to the OpenSearch cluster.
+    MaxLength: '25'
+    MinLength: '5'
+    Type: String
+  OpenSearchPassword:
+    AllowedPattern: '(?=^.{8,32}$)((?=.<em>\d)(?=.</em>[A-Z])(?=.<em>[a-z])|(?=.</em>\d)(?=.<em>[^A-Za-z0-9])(?=.</em>[a-z])|(?=.<em>[^A-Za-z0-9])(?=.</em>[A-Z])(?=.<em>[a-z])|(?=.</em>\d)(?=.<em>[A-Z])(?=.</em>[^A-Za-z0-9]))^.<em>'
+    Description: Password for the account named above. Must be at least 8 characters containing letters, numbers and symbols
+    MaxLength: '32'
+    MinLength: '8'
+    NoEcho: 'true'
+    Type: String
+  OpenSearchIndexName:
+    Default: llm-app-index
+    Type: String  <br />
+    Description: Name of the OpenSearch index for storing embeddings.
+  SageMakerNotebookName:
+    Default: llm-app-notebook
+    Type: String
+    Description: Enter name of SageMaker Notebook instance. The notebook name must <em>not</em> already exist in your AWS account/region.
+    MinLength: 1
+    MaxLength: 63
+    AllowedPattern: ^<a href="-*[a-z0-9]">a-z0-9</a></em>
+    ConstraintDescription: Must be lowercase or numbers with a length of 1-63 characters.
+  SageMakerIAMRole:
+    Description: Name of IAM role that will be created by this cloud formation template. The role name must <em>not</em> already exist in your AWS account.
+    Type: String
+    Default: "SageMakerIAMRole"   </p>
+<p>Resources:</p>
+<h1>you can out the Role above here for the simple deployment</h1>
+<h1>Role:</h1>
+<h1>....</h1>
+<p>OpenSearchSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub OpenSearchSecret-${AWS::StackName}
+      Description: OpenSearch username and password
+      SecretString: !Sub '{ "username" : "${OpenSearchUsername}", "password" : "${OpenSearchPassword}" }'</p>
+<p>NotebookInstance:
+    Type: AWS::SageMaker::NotebookInstance
+    Properties:
+      NotebookInstanceName: !Ref SageMakerNotebookName
+      InstanceType: ml.t3.medium
+      RoleArn: !GetAtt Role.Arn</p>
+<p>OpenSearchServiceDomain:
+  Type: AWS::OpenSearchService::Domain
+  Properties:
+    AccessPolicies:
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '<em>'
+          Action: 'es:</em>'
+          Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/<em>/</em>
+    EngineVersion: 'OpenSearch_2.5'
+    ClusterConfig:
+      InstanceType: "t3.small.search"
+    EBSOptions:
+      EBSEnabled: True
+      VolumeSize: 20
+      VolumeType: 'gp3'
+    AdvancedSecurityOptions:
+      AnonymousAuthEnabled: False
+      Enabled: True
+      InternalUserDatabaseEnabled: True
+      MasterUserOptions:
+        MasterUserName: !Sub ${OpenSearchUsername}
+        MasterUserPassword: !Sub ${OpenSearchPassword} 
+    NodeToNodeEncryptionOptions:
+      Enabled: True
+    EncryptionAtRestOptions:
+      Enabled: True
+      KmsKeyId: alias/aws/es
+    DomainEndpointOptions:
+      EnforceHTTPS: True</p>
+<p>Outputs:
+  OpenSearchDomainEndpoint:
+    Description: OpenSearch domain endpoint
+    Value:
+      'Fn::GetAtt':
+        - OpenSearchServiceDomain
+        - DomainEndpoint</p>
+<p>OpenSourceDomainArn:
+    Description: OpenSearch domain ARN
+    Value:
+      'Fn::GetAtt':
+        - OpenSearchServiceDomain
+        - Arn</p>
+<p>OpenSearchDomainName:
+    Description: OpenSearch domain name
+    Value: !Ref OpenSearchServiceDomain</p>
+<p>Region:
+    Description: Deployed Region
+    Value: !Ref AWS::Region</p>
+<p>SageMakerNotebookURL:
+    Description: SageMaker Notebook Instance
+    Value: !Join
+      - ''
+      - - !Sub 'https://console.aws.amazon.com/sagemaker/home?region=${AWS::Region}#/notebook-instances/openNotebook/'
+        - !GetAtt NotebookInstance.NotebookInstanceName
+        - '?view=classic'</p>
+<p>OpenSearchSecret:
+    Description: Name of the OpenSearch secret in Secrets Manager
+    Value: !Ref OpenSearchSecret
+```</p>
+<p>For the rest of the article, I will use the notebook instance. You can do the same with your local notebook. Let's start with the first task.</p>
+<p><strong>Install the necessary libraries</strong></p>
+<p><code>shell
+!pip install langchain
+!pip install opensearch-py
+!pip install chromadb</code></p>
+<p><strong>Install <code>git</code> and <code>git-lfs</code></strong></p>
+<p>```ruby</p>
+<h1>For notebook instances (Amazon Linux)</h1>
+<p>!sudo yum update -y
+!curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | sudo bash
+!sudo yum install git-lfs git -y
+```</p>
+<p>An alternative way to install <strong>git-lfs</strong> if the previous one does not work for you</p>
+<p><code>shell
+!sudo yum install -y amazon-linux-extras
+!sudo amazon-linux-extras install epel -y
+!sudo yum-config-manager --enable epel
+!sudo yum install git-lfs -y</code></p>
+<p><strong>Set Permission.</strong></p>
+<p>```python
+import sagemaker
+import boto3</p>
+<p>sess = sagemaker.Session()
+sagemaker_session_bucket = sess.default_bucket()</p>
+<p>try:
+    aws_role = sagemaker.get_execution_role()
+except ValueError:
+    iam = boto3.client('iam')
+    aws_role= iam.get_role(RoleName='SageMakerIAMRole')['Role']['Arn']</p>
+<p>aws_region = sess.region_name</p>
+<p>print(f"sagemaker role arn: {role}")
+print(f"sagemaker bucket: {sagemaker_session_bucket}")
+print(f"sagemaker region: {aws_region}")
+```</p>
+<p>Now, it is all set. Next step, I will delve into how to deploy two different embedding models</p>
+<h2>Example 1: <a href="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2">sentence-transformers/all-MiniLM-L6-v2</a></h2>
+<p>This is the most basic embedding model that is offered by HuggingFace. Let's have a look at the documentation.</p>
+<p>```python
+from transformers import AutoTokenizer, AutoModel
+import torch
+import torch.nn.functional as F</p>
+<h1>Mean Pooling - Take attention mask into account for correct averaging</h1>
+<p>def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)</p>
+<h1>Sentences we want sentence embeddings for</h1>
+<p>sentences = ['This is an example sentence', 'Each sentence is converted']</p>
+<h1>Load model from HuggingFace Hub</h1>
+<p>tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')</p>
+<h1>Tokenize sentences</h1>
+<p>encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')</p>
+<h1>Compute token embeddings</h1>
+<p>with torch.no_grad():
+    model_output = model(**encoded_input)</p>
+<h1>Perform pooling</h1>
+<p>sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])</p>
+<h1>Normalize embeddings</h1>
+<p>sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)</p>
+<p>print("Sentence embeddings:")
+print(sentence_embeddings)
+```</p>
+<p>What does this code do anyway? Well, this is a low-level embedding function that is done by all-MiniLM-L6-v2. If you are using Langchain, you may be familiar with</p>
+<p>```java</p>
+<p>from langchain.embeddings import HuggingFaceEmbeddings</p>
+<p>model_id = "sentence-transformers/all-MiniLM-L6-v2"
+embed_model = HuggingFaceEmbeddings(model_name=model_id)
+```</p>
+<p>Basically, <em><strong>HuggingFaceEmbedding</strong></em> wraps all the necessary stuff away for you. To deploy these embedding inference models on Sagemaker, we need to unwrap those codes and put them into an <strong>inference.py</strong></p>
+<h3>Create a custom an <strong>inference.py</strong> script</h3>
+<p>```python
+from transformers import AutoTokenizer, AutoModel
+import torch
+import torch.nn.functional as F</p>
+<p>def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] 
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)</p>
+<p>def model_fn(model_dir):
+  tokenizer = AutoTokenizer.from_pretrained(model_dir)
+  model = AutoModel.from_pretrained(model_dir)
+  return model, tokenizer</p>
+<p>def predict_fn(data, model_and_tokenizer):
+    # destruct model and tokenizer
+    model, tokenizer = model_and_tokenizer</p>
+<pre><code># Tokenize sentences
+encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+
+# Compute token embeddings
+with torch.no_grad():
+    model_output = model(**encoded_input)
+
+# Perform pooling
+sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+
+# Normalize embeddings
+sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
+
+# return dictonary, which will be json serializable
+return {"vector_embedding": sentence_embeddings.tolist()}
+</code></pre>
+<p>```</p>
+<p>Please refer to <strong>What about embedding tasks</strong> section above for more information if you have forgotten what you have read already 😁</p>
+<h3><strong>Create</strong> model.tar.gz with inference script and model</h3>
+<p><code>ini
+repository = "sentence-transformers/all-MiniLM-L6-v2"
+model_id=repository.split("/")[-1]
+s3_location=f"s3://{sess.default_bucket()}/custom_inference/{model_id}/model.tar.gz"</code></p>
+<p>```bash</p>
+<h2>download the model from hf model</h2>
+<p>!git lfs install
+!git clone https://huggingface.co/$repository</p>
+<h2>copy inference.py and requirements.txt to code/ directory</h2>
+<h2>this is mandatory to have files under code/ folder</h2>
+<p>!cp -r inference.py $model_id/code/
+!cp -r requirements.txt $model_id/code/</p>
+<h2>create model.tar.gx archive with all the model artifacts</h2>
+<p>%cd $model_id
+!tar zcvf model.tar.gz *</p>
+<h2>upload to S3</h2>
+<p>!aws s3 cp model.tar.gz $s3_location
+```</p>
+<p><strong>Create a custom Huggingface Model</strong></p>
+<p>```python
+from sagemaker.huggingface.model import HuggingFaceModel</p>
+<h1>create Hugging Face Model Class</h1>
+<p>huggingface_model = HuggingFaceModel(
+   model_data=s3_location,       # path to your model and script
+   role=role,                    # iam role with permissions to create an Endpoint
+   transformers_version="4.26",  # transformers version used
+   pytorch_version="1.13",        # pytorch version used
+   py_version='py39',            # python version used
+)</p>
+<h1>deploy the endpoint endpoint</h1>
+<p>predictor = huggingface_model.deploy(
+    initial_instance_count=1,
+    instance_type="ml.m5.xlarge"
+)
+```</p>
+<p>After this, you should have the embedding of real-time inference in the Sagemaker console.</p>
+<hr />
+<p>Now, you may wonder, sentence-transformers/all-MiniLM-L6-v2 is already supported by AWS Sagemaer, why do we still need to go through this?</p>
+<p>Well, example 1 is just a demonstration, I want to show example 1 because I want to show you the pattern on how to take any Huggingface model to Sagemaker not just only the official models.</p>
+<p>As you will see, the beloved and almost champion in the embedding-retrieval <strong><a href="https://huggingface.co/hkunlp/instructor-large">hkunlp/instructor-large</a></strong> will have a very different approach, but once you understand the logic behind it, you can onboard any models.
+Let's try another one.</p>
+<h2>Example 2: <a href="https://huggingface.co/hkunlp/instructor-large">hkunlp/instructor-large</a></h2>
+<p>If you look into the source code, the low-level embedding will be like this</p>
+<p><code>bash
+!pip install InstructorEmbedding</code></p>
+<p>```python
+from InstructorEmbedding import INSTRUCTOR</p>
+<p>model = INSTRUCTOR('hkunlp/instructor-large')
+sentence = "3D ActionSLAM: wearable person tracking in multi-floor environments"
+instruction = "Represent the Science title:"
+embeddings = model.encode([[instruction,sentence]])
+print(embeddings)
+```</p>
+<p>Compare to <strong>sentence-transformers/all-MiniLM-L6-v2,</strong> there is no <em><strong>mean_pooling function or AutoTokenizer or AutoModel</strong></em>. It is just INSTRUCTOR. 
+So how do we incorporate to <strong>inference.py</strong>?</p>
+<p>First, this model requires to install InstructorEmbedding, so we need to install this library to the inference endpoint.</p>
+<p>You need to create a <strong>requirements.txt</strong> with this content.</p>
+<p><code>typescript
+InstructorEmbedding</code></p>
+<p>Modify the <strong>inference.py</strong> to follow instructor-embedding code.</p>
+<p>```python
+from InstructorEmbedding import INSTRUCTOR</p>
+<p>def model_fn(model_dir):
+  model = INSTRUCTOR(model_dir)
+  return model</p>
+<p>def predict_fn(data, model):
+  embeddings = model.encode(data)
+  return {"vector_embedding": sentence_embeddings.tolist()}
+```</p>
+<h3>Create model.tar.gz with inference script and model</h3>
+<p><code>ini
+repository = "hkunlp/instructor-large"
+model_id=repository.split("/")[-1]
+s3_location=f"s3://{sess.default_bucket()}/custom_inference/{model_id}/model.tar.gz"</code></p>
+<p>```bash</p>
+<h2>download the model from hf model</h2>
+<p>!git lfs install
+!git clone https://huggingface.co/$repository
+```</p>
+<p>```bash</p>
+<h2>copy inference.py and requirements.txt to code/ directory</h2>
+<h2>this is mandatory to have files under code/ folder</h2>
+<p>!cp -r inference.py $model_id/code/
+!cp -r requirements.txt $model_id/code/</p>
+<h2>create model.tar.gx archive with all the model artifacts</h2>
+<p>%cd $model_id
+!tar zcvf model.tar.gz *</p>
+<h2>upload to S3</h2>
+<p>!aws s3 cp model.tar.gz $s3_location
+```</p>
+<p><strong>Create a custom Huggingface Model</strong></p>
+<p>```python
+from sagemaker.huggingface.model import HuggingFaceModel</p>
+<h1>create Hugging Face Model Class</h1>
+<p>huggingface_model = HuggingFaceModel(
+   model_data=s3_location,       # path to your model and script
+   role=role,                    # iam role with permissions to create an Endpoint
+   transformers_version="4.26",  # transformers version used
+   pytorch_version="1.13",        # pytorch version used
+   py_version='py39',            # python version used
+)</p>
+<h1>deploy the endpoint endpoint</h1>
+<p>predictor = huggingface_model.deploy(
+    initial_instance_count=1,
+    instance_type="ml.m5.xlarge"
+)
+```</p>
+<p>After this, you should have the embedding of real-time inference in the Sagemaker console.</p>
+<p>Now, you have the instructor-large embedding inference endpoint running on Sagemaker, let's integrate it into Langchain.</p>
+<h2>Langchain with Sagemaker Real-time embedding Endpoint</h2>
+<p>Langchain provides the <code>[SagemakerEndpointEmbeddings](https://notebooks.githubusercontent.com/view/ipynb?browser=chrome&amp;bypass_fastly=true&amp;color_mode=light&amp;commit=1308b2c7f0b5c259e02a3a6573c1ca2e6f1c073f&amp;device=unknown_device&amp;docs_host=https%3A%2F%2Fdocs.github.com&amp;enc_url=68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f6177732d73616d706c65732f6c6c6d2d617070732d776f726b73686f702f313330386232633766306235633235396530326133613635373363316361326536663163303733662f626c6f67732f7261672f646174615f696e67657374696f6e5f746f5f766563746f7264622e6970796e62&amp;logged_in=true&amp;nwo=aws-samples%2Fllm-apps-workshop&amp;path=blogs%2Frag%2Fdata_ingestion_to_vectordb.ipynb&amp;platform=windows&amp;repository_id=629772172&amp;repository_type=Repository&amp;version=114)</code> class which is a wrapper around a functionality to talk to a Sagemaker Endpoint to generate embeddings. We will override the <code>embed_documents</code> function to define our own batching strategy for sending requests to the model (multiple requests are sent in one model invocation). Similarly, we extend the <code>ContentHandlerBase</code> class to provide implementation for two abstract methods which define how to process (encode/decode) the input data sent to the model and the output received from the model.</p>
+<p>We finally create a <code>SagemakerEndpointEmbeddingsJumpStart</code> object that puts all this together and can now be used by langchain to talk to an LLM deployed as a Sagemaker Endpoint to generate embeddings.</p>
+<p>```ruby
+"""
+Helper functions for using Samgemaker Endpoint via langchain
+"""
+import time
+import json
+from typing import List
+from langchain.embeddings import SagemakerEndpointEmbeddings
+from langchain.embeddings.sagemaker_endpoint import EmbeddingsContentHandler</p>
+<h1>extend the SagemakerEndpointEmbeddings class from langchain to provide a custom embedding function</h1>
+<p>class SagemakerEndpointEmbeddingsJumpStart(SagemakerEndpointEmbeddings):
+    def embed_documents(
+        self, texts: List[str], chunk_size: int = 5
+    ) -&gt; List[List[float]]:
+        """Compute doc embeddings using a SageMaker Inference Endpoint.</p>
+<pre><code>    Args:
+        texts: The list of texts to embed.
+        chunk_size: The chunk size defines how many input texts will
+            be grouped together as request. If None, will use the
+            chunk size specified by the class.
+
+    Returns:
+        List of embeddings, one for each text.
+    """
+    results = []
+    _chunk_size = len(texts) if chunk_size &gt; len(texts) else chunk_size
+    st = time.time()
+    for i in range(0, len(texts), _chunk_size):
+        response = self._embedding_func(texts[i:i + _chunk_size])
+        results.extend(response)
+    time_taken = time.time() - st
+    print(f"got results for {len(texts)} in {time_taken}s, length of embeddings list is {len(results)}")
+    return results
+</code></pre>
+<h1>class for serializing/deserializing requests/responses to/from the embeddings model</h1>
+<p>class ContentHandler(EmbeddingsContentHandler):
+    content_type = "application/json"
+    accepts = "application/json"</p>
+<pre><code>def transform_input(self, prompt: str, model_kwargs={}) -&gt; bytes:
+    input_str = json.dumps(prompt)
+    return input_str.encode('utf-8')
+
+def transform_output(self, output: bytes) -&gt; str:
+    response_json = json.loads(output.read().decode("utf-8"))
+    embeddings = response_json["vector_embedding"]
+    if len(embeddings) == 1:
+        return [embeddings[0]]
+    return embeddings
+</code></pre>
+<p>def create_sagemaker_embeddings_from_js_model(embeddings_model_endpoint_name: str, aws_region: str) -&gt; SagemakerEndpointEmbeddingsJumpStart:
+    # all set to create the objects for the ContentHandler and 
+    # SagemakerEndpointEmbeddingsJumpStart classes
+    content_handler = ContentHandler()</p>
+<pre><code># note the name of the LLM Sagemaker endpoint, this is the model that we would
+# be using for generating the embeddings
+embeddings = SagemakerEndpointEmbeddingsJumpStart( 
+    endpoint_name=embeddings_model_endpoint_name,
+    region_name=aws_region, 
+    content_handler=content_handler
+)
+return embeddings
+</code></pre>
+<p>```</p>
+<p>Init the wrap parameters:</p>
+<p><code>python
+embeddings_model_endpoint_name = "&lt;the name of your embedding endpoint model from Sagemaker&gt;"
+content_handler = ContentHandler()
+embeddings_endpoint = create_sagemaker_embeddings_from_js_model(embeddings_model_endpoint_name, '&lt;your-aws-region&gt; (ap-southeast-2 for example)')</code></p>
+<h3>Add Embedding Real-time Model to Chroma</h3>
+<p>```python</p>
+<h1>import</h1>
+<p>from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import Chroma
+from langchain.chains import RetrievalQA
+from langchain.document_loaders import UnstructuredPDFLoader
+from langchain.chat_models import ChatOpenAI</p>
+<h1>load the document and split it into chunks</h1>
+<p>loader = UnstructuredPDFLoader("./documents/Apple-10k-report.pdf")
+documents = loader.load()</p>
+<h1>split it into chunks</h1>
+<p>text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)</p>
+<h1>load it into Chroma</h1>
+<p>db = Chroma.from_documents(docs, embeddings_endpoint)</p>
+<p>chat = ChatOpenAI(temperature=0.2, model_name='gpt-3.5-turbo', 
+                                 openai_api_key="YOUR_API_KEY", 
+                                 openai_organization="YOUR_ORGANIZATION_ID")
+chain = RetrievalQA.from_chain_type(chat,chain_type="stuff", 
+                             retriever=docsearch.as_retriever())
+chain.run("What is revenue last year?")
+```</p>
+<h3>Add Embedding Real-time Model to OpenSearch Service</h3>
+<p>This is totally optional. If you have followed the yaml setup, you may already install the OpenSearch service. As mentioned, having Chroma in your local machine/notebook is fine for the experiment. If you need to bring your app to a high level of scale, then perhaps you need to either use a commercial vector database such as Pinecone or deploy your own database like Chroma on EC2 or AWS Managed OpenSearch service. Here is how to ingest data into OpenSearch with the real-time embedding endpoint.</p>
+<p>```python</p>
+<h1>import</h1>
+<p>from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.chains import RetrievalQA
+from langchain.document_loaders import UnstructuredPDFLoader
+from langchain.chat_models import ChatOpenAI
+from langchain.vectorstores import OpenSearchVectorSearch</p>
+<h1>load the document and split it into chunks</h1>
+<p>loader = UnstructuredPDFLoader("./documents/Apple-10k-report.pdf")
+documents = loader.load()</p>
+<h1>split it into chunks</h1>
+<p>text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)</p>
+<p>chat = ChatOpenAI(temperature=0.2, model_name='gpt-3.5-turbo', 
+                                 openai_api_key="YOUR_API_KEY", 
+                                 openai_organization="YOUR_ORGANIZATION_ID")</p>
+<p>docsearch = OpenSearchVectorSearch(
+    index_name="index-10k-report",
+    embedding_function=embedding,
+    opensearch_url= "<your_opensearch_url>",
+    http_auth=("<your-opensearch-username>",'<your-opensearch-password>'),
+    use_ssl=False,
+    verify_certs=False,
+    ssl_assert_hostname=False,
+    ssl_show_warn=False  <br />
+)
+docsearch.add_documents(documents=docs)</p>
+<p>chain = RetrievalQA.from_chain_type(chat,chain_type="stuff", 
+                             retriever=docsearch.as_retriever())
+chain.run("What is revenue last year?")
+```</p>
+<h2>Wrap up</h2>
+<p>Wow, we've covered a lot in this post! As we've reached the end, I'm thinking about splitting the content into future posts to keep the journey going.</p>
+<p>Deploying HuggingFace embedding models has been both challenging and incredibly rewarding. You should now have a good grasp of the basics and fundamentals needed to bring any HuggingFace embedding model to a real-time endpoint on Sagemaker.</p>
+<p>I genuinely hope this article has been helpful to you in some way. If you found it valuable, a little clap would mean the world to me. Don't forget to follow me to stay updated on all the exciting content that's coming up!</p>
+<p>If you have any questions? Feel free to leave a comment, and I promise to get back to you as soon as possible. Your feedback and involvement are incredibly valuable to me.</p>
+<h2>Reference:</h2>
+<p><strong>OpenSearch</strong>: <a href="https://opensearch.org/blog/semantic-search-solutions/">https://opensearch.org/blog/semantic-search-solutions/</a>
+<strong>Chroma</strong>: <a href="https://github.com/chroma-core/chroma">https://github.com/chroma-core/chroma</a></p>
+<p><strong>Langchain + Sagemaker</strong>: <a href="https://python.langchain.com/docs/integrations/sagemaker_endpoint">https://python.langchain.com/docs/integrations/sagemaker_endpoint</a></p>
+<p><strong>Reach out to me on LinkedIn</strong>: <a href="https://www.linkedin.com/in/ryan-nguyen-abb844a4/">https://www.linkedin.com/in/ryan-nguyen-abb844a4/</a>
+<strong>Reach out to me on Twitter</strong>: <a href="https://twitter.com/kiennt_">https://twitter.com/kiennt_</a></p>
+<p><strong>Subscribe to my substack as I cover more ML in-depth:</strong> <a href="https://howaibuildthis.substack.com/">https://howaibuildthis.substack.com/</a></p>

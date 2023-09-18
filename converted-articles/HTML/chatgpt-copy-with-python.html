@@ -1,0 +1,265 @@
+<h1>How to Create an AI Chatbot similar to ChatGPT in Python</h1>
+<p><img alt="Image Created by Author - Bing" src="https://miro.medium.com/0*sziin8J-isovvl3p" /></p>
+<h2>Introduction</h2>
+<p>In this article, I'll show you how to create an AI chatbot similar to ChatGPT in Python. This chatbot will be able to generate natural language responses based on user input, using a powerful machine learning model from OpenAI. You will learn how to use Python, spaCy, and OpenAI to build and train your own chatbot in a few simple steps. This article will cover the following topics:</p>
+<ul>
+<li>
+<p>What is an AI chatbot and why you should create one</p>
+</li>
+<li>
+<p>How to install and use spaCy, a Python-based natural language processing library</p>
+</li>
+<li>
+<p>How to get an API key from OpenAI and use it to access ChatGPT</p>
+</li>
+<li>
+<p>How to create a command-line interface for your chatbot using Python's Tkinter library</p>
+</li>
+<li>
+<p>How to test and improve your chatbot's performance</p>
+</li>
+</ul>
+<p>By the end of this article, you will have a fully functional AI chatbot that can converse with you on any topic. You will also gain some insights into the basics of natural language processing and machine learning. This article should be suitable for beginners who have some knowledge of Python and are interested in computer science and machine learning.</p>
+<p>So, let's get started!</p>
+<h2>What is an AI chatbot and why you should create one</h2>
+<p>A chatbot is a software program that can interact with users using natural language. Chatbots can provide various services, such as customer support, entertainment, education, information retrieval, etc. Chatbots can be deployed on different platforms, such as websites, mobile apps, social media, messaging apps, etc.</p>
+<p>An AI chatbot is a chatbot that uses artificial intelligence (AI) techniques to understand and generate natural language. AI chatbots can learn from data and user feedback, and adapt their responses accordingly. AI chatbots can also handle complex and diverse user queries, and provide more personalized and engaging conversations.</p>
+<p>Creating an AI chatbot can have many benefits for you and your users. For example:</p>
+<ul>
+<li>
+<p>You can automate repetitive tasks and save time and resources</p>
+</li>
+<li>
+<p>You can provide faster and more accurate answers to user questions</p>
+</li>
+<li>
+<p>You can enhance user satisfaction and loyalty</p>
+</li>
+<li>
+<p>You can showcase your creativity and skills</p>
+</li>
+</ul>
+<p>One of the most popular AI models that can be used to create an AI chatbot is ChatGPT. ChatGPT is a deep neural network that was trained on a large corpus of text from the internet. ChatGPT can generate coherent and fluent text on any given prompt, using a technique called text generation. Text generation is the process of creating new text based on some input, such as a word, a phrase, or a sentence.</p>
+<p>ChatGPT is available through OpenAI, an artificial intelligence research organization that provides a platform for building and training machine learning models. OpenAI also provides an API that allows you to access ChatGPT and other models easily from your code.</p>
+<p>In this article, you will use the OpenAI API to create an AI chatbot similar to ChatGPT in Python.</p>
+<h2>How to install and use spaCy, a Python-based natural language processing library</h2>
+<p>To create an AI chatbot in Python, you will need to use a natural language processing (NLP) library. NLP is a branch of computer science that deals with analyzing and processing natural language data. NLP can help you perform tasks such as:</p>
+<ul>
+<li>
+<p>Tokenization: splitting text into smaller units called tokens</p>
+</li>
+<li>
+<p>Part-of-speech tagging: assigning grammatical categories to tokens</p>
+</li>
+<li>
+<p>Named entity recognition: identifying and extracting entities from text</p>
+</li>
+<li>
+<p>Similarity: measuring how similar two texts are in meaning</p>
+</li>
+<li>
+<p>Sentiment analysis: determining the emotional tone of text</p>
+</li>
+</ul>
+<p>One of the best NLP libraries for Python is spaCy. spaCy is a fast and robust library that provides helpful features for building NLP applications. spaCy also comes with pre-trained models for different languages that you can use to process text data.</p>
+<p>To install spaCy on your system, you need to have Python 3.x installed on your computer. You also need to create and activate a virtual environment for your project. A virtual environment is an isolated space where you can install packages without affecting other projects or your system.</p>
+<p>To create and activate a virtual environment, you can use the following commands in your terminal:</p>
+<p>```python</p>
+<h1>Create a virtual environment named env</h1>
+<p>python -m venv env
+```</p>
+<p>```python</p>
+<h1>Activate the virtual environment</h1>
+<p>source env/bin/activate
+```</p>
+<p>Once you have activated your virtual environment, you can install spaCy using pip:</p>
+<p>```python</p>
+<h1>Install spaCy</h1>
+<p>pip install -U spacy
+```</p>
+<p>After installing spaCy, you need to download a language model for English. A language model is a pre-trained NLP model that contains information about the structure and vocabulary of a language. You can download the language model using this command:</p>
+<p>```python</p>
+<h1>Download the English language model</h1>
+<p>python -m spacy download en_core_web_sm
+```</p>
+<p>Now you are ready to use spaCy in your code. To use spaCy, you need to import it and load the language model:</p>
+<p>```python</p>
+<h1>Import spaCy</h1>
+<p>import spacy
+```</p>
+<p>```python</p>
+<h1>Load the English language model</h1>
+<p>nlp = spacy.load("en_core_web_sm")
+```</p>
+<p>You can now use the nlp object to process any text data. For example, you can use it to tokenize a sentence:</p>
+<p>```python</p>
+<h1>Tokenize a sentence</h1>
+<p>text = "Hello world!"
+doc = nlp(text)
+for token in doc:
+    print(token.text)
+```</p>
+<p><code>Hello
+world
+!</code></p>
+<p>You can also use spaCy to perform other NLP tasks on your text data. For example, you can use it to find the similarity between two sentences:</p>
+<p>```python</p>
+<h1>Find similarity between two sentences</h1>
+<p>text1 = "I like cats."
+text2 = "I love dogs."
+doc1 = nlp(text1)
+doc2 = nlp(text2)
+similarity = doc1.similarity(doc2)
+print(similarity)
+```</p>
+<p>The output will be:</p>
+<p><code>0.8016854705531046</code></p>
+<p>The similarity score ranges from 0 (completely different) to 1 (exactly the same). In this case, the two sentences are fairly similar in meaning.</p>
+<p>You can learn more about spaCy's features and capabilities from its official documentation.</p>
+<h2>How to get an API key from OpenAI and use it to access ChatGPT</h2>
+<p>To access ChatGPT from your code, you need to get an API key from OpenAI. An API key is a unique identifier that allows you to authenticate yourself when making requests to the OpenAI API.</p>
+<p>To get an API key from OpenAI, you need to create an account on their website. Visit <a href="https://openai.com/">https://openai.com/</a> and click on Sign Up. Fill in your details and confirm your email address.</p>
+<p>After registering successfully, visit <a href="https://beta.openai.com/account/api-keys">https://beta.openai.com/account/api-keys</a> to view your API key. Your API key should look something like this:</p>
+<p><code>sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></p>
+<p>Copy your API key and store it somewhere safe. You will need it later in your code.</p>
+<p>To use the OpenAI API in your code, you need to install the openai library using pip:</p>
+<p>```bash</p>
+<h1>Install openai library</h1>
+<p>pip install openai
+```</p>
+<p>After installing the openai library, you need to import it and set your API key as an environment variable:</p>
+<p>```python</p>
+<h1>Import openai library</h1>
+<p>import openai
+```</p>
+<p>```python</p>
+<h1>Set API key as environment variable</h1>
+<p>import os
+os.environ["OPENAI_API_KEY"] = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```</p>
+<p>Replace sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx with your actual API key.</p>
+<p>You can now use the openai library to access ChatGPT and other models from your code. For example, you can use it to generate text based on a prompt:</p>
+<p>```python</p>
+<h1>Generate text based on a prompt</h1>
+<p>prompt = "How are you today?"
+response = openai.Completion.create(engine="davinci", prompt=prompt)
+print(response["choices"][0]["text"])
+```</p>
+<p>The output will be something like this:</p>
+<p><code>I'm doing well, thank you for asking.</code></p>
+<p>The engine parameter specifies which model you want to use for text generation. In this case, we used davinci, which is the most advanced model available from OpenAI. The prompt parameter specifies what text you want to give as input to the model. The response object contains various information about the generated text, such as its length, probability score, etc. We only printed the actual text by accessing the choices[0]["text"] attribute.</p>
+<p>You can learn more about the openai library and its methods from its official documentation.</p>
+<h2>How to create a command-line interface for your chatbot using Python's Tkinter library</h2>
+<p>To create a user interface for your chatbot, you will use Python's Tkinter library. Tkinter is a standard GUI toolkit for Python that allows you to create graphical elements such as windows, buttons, labels, etc.</p>
+<p>To use Tkinter in your code, you need to import it:</p>
+<p>```python</p>
+<h1>Import Tkinter library</h1>
+<p>import tkinter as tk
+```</p>
+<p>You also need to create a root window that will contain all the other widgets:</p>
+<p>```python</p>
+<h1>Create root window</h1>
+<p>root = tk.Tk()
+root.title("AI Chatbot")
+root.geometry("400x500")
+root.resizable(width=False,height=False)
+```</p>
+<p>The root window has some attributes such as title (the name of the window), geometry (the size and position of the window), resizable (whether the window can be resized by the user), and alpha (the transparency of the window). You can change these attributes using the root.title(), root.geometry(), root.resizable(), and root.attributes() methods respectively.</p>
+<p>For example, the following code creates a root window with the title "AI Chatbot", a size of 400x500 pixels, a fixed width and height, and a 90% opacity:</p>
+<p>```python</p>
+<h1>Import Tkinter library</h1>
+<p>import tkinter as tk
+```</p>
+<p>```python</p>
+<h1>Create root window</h1>
+<p>root = tk.Tk()
+root.title("AI Chatbot")
+root.geometry("400x500")
+root.resizable(width=False,height=False)
+root.attributes("-alpha", 0.9)
+```</p>
+<p>You can learn more about the root window attributes from the Tkinter documentation.</p>
+<h2>How to create a command-line interface for your chatbot using Python's Tkinter library</h2>
+<p>To create a user interface for your chatbot, you will use Python's Tkinter library. Tkinter is a standard GUI toolkit for Python that allows you to create graphical elements such as windows, buttons, labels, etc.</p>
+<p>To use Tkinter in your code, you need to import it:</p>
+<p>```python</p>
+<h1>Import Tkinter library</h1>
+<p>import tkinter as tk
+```</p>
+<p>You also need to create a root window that will contain all the other widgets:</p>
+<p>```python</p>
+<h1>Create root window</h1>
+<p>root = tk.Tk()
+root.title("AI Chatbot")
+root.geometry("400x500")
+root.resizable(width=False,height=False)
+root.attributes("-alpha", 0.9)
+```</p>
+<p>The root window has some attributes such as title (the name of the window), geometry (the size and position of the window), resizable (whether the window can be resized by the user), and alpha (the transparency of the window). You can change these attributes using the root.title(), root.geometry(), root.resizable(), and root.attributes() methods respectively.</p>
+<p>Next, you need to create a text widget that will display the chat history between the user and the chatbot:</p>
+<p>```python</p>
+<h1>Create chat history widget</h1>
+<p>chat_history = tk.Text(root, bg="#2C3E50", fg="#EAECEE", font="Helvetica 14")
+chat_history.pack(padx=10, pady=10)
+```</p>
+<p>The text widget has some attributes such as bg (background color), fg (foreground color), font (font name and size), etc. You can also use the pack() method to arrange the widget in the window. The pack() method has some options such as padx (horizontal padding), pady (vertical padding), etc.</p>
+<p>Next, you need to create an entry widget that will allow the user to type and send messages:</p>
+<p>```python</p>
+<h1>Create message entry widget</h1>
+<p>message = tk.StringVar()
+message_entry = tk.Entry(root, bg="#2C3E50", fg="#EAECEE", font="Helvetica 14", textvariable=message)
+message_entry.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+```</p>
+<p>The entry widget has similar attributes as the text widget. You also need to create a string variable that will store the user input. You can use the textvariable option to link the entry widget with the string variable.</p>
+<p>Next, you need to create a button widget that will send the user message to the chatbot:</p>
+<p>```python</p>
+<h1>Create send button widget</h1>
+<p>send_button = tk.Button(root, text="Send", font="Helvetica 13 bold", bg="#ABB2B9", command=send_message)
+send_button.pack(side=tk.BOTTOM)
+```</p>
+<p>The button widget has some attributes such as text (the label of the button), font (font name and size), bg (background color), etc. You also need to use the command option to specify a function that will be executed when the button is clicked. In this case, we will define a function called send_message that will handle the user input and chatbot response.</p>
+<p>Finally, you need to define the send_message function that will perform the following tasks:</p>
+<ul>
+<li>
+<p>Get the user input from the message variable and print it on the chat history widget</p>
+</li>
+<li>
+<p>Use the openai library to generate a response from ChatGPT based on the user input and print it on the chat history widget</p>
+</li>
+<li>
+<p>Clear the message entry widget for new input</p>
+</li>
+</ul>
+<p>The send_message function looks something like this:</p>
+<p>```python</p>
+<h1>Define send message function</h1>
+<p>def send_message():
+    # Get user input
+    user_input = message.get()
+    # Print user input on chat history
+    chat_history.config(state=tk.NORMAL)
+    chat_history.insert(tk.END, "You -&gt; " + user_input + "\n\n")
+    chat_history.config(state=tk.DISABLED)
+    # Generate response from ChatGPT
+    response = openai.Completion.create(engine="davinci", prompt=user_input)
+    chatbot_output = response["choices"][0]["text"]
+    # Print chatbot output on chat history
+    chat_history.config(state=tk.NORMAL)
+    chat_history.insert(tk.END, "Bot -&gt; " + chatbot_output + "\n\n")
+    chat_history.config(state=tk.DISABLED)
+    # Clear message entry
+    message.set("")
+```</p>
+<p>You also need to bind the return key with the send_message function so that the user can press enter to send messages:</p>
+<p>```python</p>
+<h1>Bind return key with send message function</h1>
+<p>message_entry.bind("<Return>", send_message)
+```</p>
+<p>Now you have completed your chatbot application with Tkinter. You can run your code and start chatting with your AI chatbot.</p>
+<h2>Conclusion</h2>
+<p>Thanks for reading this article! I hope you learned how to create an AI chatbot similar to ChatGPT in Python by using spaCy for natural language processing, OpenAI for text generation, and Tkinter for graphical user interface.</p>
+<p>I hope you enjoyed this tutorial and found it useful. If you have any questions or feedback, please feel free to leave a comment below. 😊</p>
+<hr />
+<p>Thank you for taking the time to read this story. If you enjoyed it, please show your appreciation by <em><strong>clicking the clap icon as many times</strong></em> as you wish. If you appreciate my writing and would like to support me, you can <strong><a href="https://medium.com/@SPX701/membership">become a Medium member by following the link</a></strong> or treating me to a <strong><a href="https://www.buymeacoffee.com/SPX701">cup of coffee ☕️</a></strong>. Stay tuned for more content!</p>
+<p><em>More content at <strong><a href="https://plainenglish.io/">PlainEnglish.io</a></strong>.</em></p>
+<p><em>Sign up for our <strong><a href="http://newsletter.plainenglish.io/">free weekly newsletter</a></strong>. Follow us on <strong><a href="https://twitter.com/inPlainEngHQ">Twitter</a></strong></em>, <em><strong><a href="https://www.linkedin.com/company/inplainenglish/">LinkedIn</a></strong>, <strong><a href="https://www.youtube.com/channel/UCtipWUghju290NWcn8jhyAw">YouTube</a></strong>, and <strong><a href="https://discord.gg/GtDtUAvyhW">Discord</a>.</strong></em></p>

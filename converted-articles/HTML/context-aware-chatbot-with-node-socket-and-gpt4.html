@@ -1,0 +1,253 @@
+<p><img alt="" src="https://miro.medium.com/1*Bz0g5nHSSG8-JcLjhhVe1A.png" /></p>
+<h1>Build a Complete Context-Aware AI Chatbot Web App With Node.js, Socket.IO, and GPT-4 API</h1>
+<h3>Chatbots powered by advanced AI technology like GPT-4 can help you significantly improve user engagement, provide instant assistance, and elevate the overall user experience. In this tutorial, we will guide you through building an AI Chatbot Web App that harnesses the power of Node.js, Socket.IO, and the GPT-4 API. By following this step-by-step guide, you'll learn how to create a seamless, real-time chatbot experience that can transform your website and impress your visitors.</h3>
+<p>In this section, we will focus on how our chatbot web application incorporates conversation history to deliver a context-aware and interactive experience. Our implementation ensures that each new response from the GPT-4 API takes into account not only the user's latest input but also the entire conversation history. This context-aware approach allows the chatbot to refer back to previous exchanges and respond appropriately, creating a more natural and engaging interaction between the user and the chatbot.</p>
+<p>By the end of this tutorial, you will have a fully functional chatbot web application that keeps track of the conversation history, enabling context-aware interactions and providing a superior user experience. With this powerful tool at your disposal, you can create more meaningful connections with your website visitors, streamline customer support, and drive user engagement to new heights.</p>
+<p><img alt="Take a look at the chat bot web app we're going to build in this tutorial from start to finish." src="https://miro.medium.com/1*D_Dyd702N_n5VMPAibL-7g.png" /></p>
+<p>To create a full Node.js web application that offers chatbot functionality using GPT-4, you'll need to set up an Express server, use Socket.IO for real-time communication, and serve a simple front-end with an HTML, CSS, and JavaScript file. Here's a step-by-step guide:</p>
+<h3><strong>Setting Up The Project And Install Dependencies</strong></h3>
+<p>Before diving into the chatbot's implementation, it's essential to set up the project and install the necessary dependencies. In the following we will guide you through the initial steps to create your project's structure, install the required Node.js packages, and ensure a smooth development experience. Let's get started with setting up the foundation for our AI-powered chatbot web application!</p>
+<p><strong>Step 1: Create a new directory for your project and navigate to it</strong></p>
+<p>Execute the following command to create a new project directory in the very first step:</p>
+<p><code>bash
+mkdir gpt4-chatbot
+cd gpt4-chatbot</code></p>
+<p><strong>Step 2: Initialize a new Node.js project and install the required packages</strong></p>
+<p>Next, create a package.json file in the project folder and make sure that all needed dependencies are being installed:</p>
+<p><code>csharp
+npm init -y
+npm install express socket.io openai dotenv</code></p>
+<p><strong>Step 3: Create a <code>.env</code> file to store your OpenAI API key:</strong></p>
+<p><code>ini
+OPENAI_API_KEY=your_openai_api_key</code></p>
+<p>To retrieve your OpenAI API key you need to create a user account at <a href="https://openai.com/">https://openai.com/</a> and access the API Keys section in the OpenAI dashboard to create a new API key.</p>
+<p><img alt="" src="https://miro.medium.com/0*MvU7t8IWuz-wzdaB.png" /></p>
+<h3>Implement The Server Logic</h3>
+<p><strong>Step 4: Create an <code>app.js</code> file for the server:</strong></p>
+<p>```javascript
+// app.js</p>
+<p>require("dotenv").config();
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
+const { Configuration, OpenAIApi } = require("openai");</p>
+<p>const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
+const port = process.env.PORT || 3000;</p>
+<p>// OpenAI API configuration
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);</p>
+<p>app.use(express.static("public"));</p>
+<p>io.on("connection", (socket) =&gt; {
+  console.log("New user connected");</p>
+<p>// Initialize the conversation history
+  const conversationHistory = [];</p>
+<p>socket.on("sendMessage", async (message, callback) =&gt; {
+    try {
+      // Add the user message to the conversation history
+      conversationHistory.push({ role: "user", content: message });</p>
+<pre><code>  const completion = await openai.createChatCompletion({
+    model: "gpt-4",
+    messages: conversationHistory,
+  });
+
+  const response = completion.data.choices[0].message.content;
+
+  // Add the assistant's response to the conversation history
+  conversationHistory.push({ role: "assistant", content: response });
+
+  socket.emit("message", response);
+  callback();
+} catch (error) {
+  console.error(error);
+  callback("Error: Unable to connect to the chatbot");
+}
+</code></pre>
+<p>});</p>
+<p>socket.on("disconnect", () =&gt; {
+    console.log("User disconnected");
+  });
+});</p>
+<p>server.listen(port, () =&gt; {
+  console.log(<code>Server is running on port ${port}</code>);
+});
+```</p>
+<p>This code snippet is the main server-side code for a Node.js chatbot web application that uses the GPT-4 API, Express, and Socket.IO.</p>
+<ol>
+<li>
+<p><code>dotenv</code> is imported and configured to load environment variables from a <code>.env</code> file.</p>
+</li>
+<li>
+<p>The necessary modules, such as <code>express</code>, <code>http</code>, <code>socket.io</code>, and <code>openai</code>, are imported.</p>
+</li>
+<li>
+<p>An Express app, an HTTP server, and a Socket.IO server are created, with the server listening on a specified port (from environment variables or defaulting to 3000).</p>
+</li>
+<li>
+<p>The OpenAI API is configured with the provided API key.</p>
+</li>
+<li>
+<p>The <code>public</code> directory is set as the static files directory for the Express app.</p>
+</li>
+<li>
+<p>A connection event listener is added to the Socket.IO server. When a new user connects:</p>
+</li>
+<li>
+<p>The user's connection is logged.</p>
+</li>
+<li>
+<p>An empty array called <code>conversationHistory</code> is initialized to store the conversation history.</p>
+</li>
+<li>
+<p>A <code>sendMessage</code> event listener is added to the connected socket. When a user sends a message: The user's message is added to the <code>conversationHistory</code> array. A GPT-4 API request is made with the conversation history as input. The chatbot's response is extracted from the API result and added to the <code>conversationHistory</code> array. Finally, the chatbot's response is emitted back to the user through the <code>message</code> event. If there is an error, an error message is sent back to the user.</p>
+</li>
+<li>
+<p>A <code>disconnect</code> event listener is added to the connected socket to log when a user disconnects.</p>
+</li>
+<li>
+<p>The server is started, and a log message indicates it is running on the specified port.</p>
+</li>
+</ol>
+<p><strong>Step 5: Create a <code>public</code> directory and inside it, create the <code>index.html</code>, <code>styles.css</code>, and <code>script.js</code> files</strong></p>
+<p>Use the following command to complete this step:</p>
+<p><code>bash
+mkdir public
+cd public
+touch index.html styles.css script.js</code></p>
+<h3>Implement The Front-End</h3>
+<p><strong>Step 6: Add the following HTML code to the <code>index.html</code> file:</strong></p>
+<p>The following HTML code represents the main page of a chatbot web application. It provides the basic structure and includes the necessary CSS and JavaScript files for the chatbot's front-end and needs to be inserted into <code>index.html</code> :</p>
+<p>```xml</p>
+<!-- public/index.html -->
+
+<!DOCTYPE html>
+<p><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot</title>
+  <link rel="stylesheet" href="styles.css">
+</head></p>
+<body>
+  <div id="chat-container">
+    <div id="messages"></div>
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="Type your message" autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+<p></html>
+```</p>
+<p><strong>Step 7: Add the following CSS code to the <code>styles.css</code> file</strong></p>
+<p>```css
+/<em> public/styles.css </em>/</p>
+<p>body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}</p>
+<h1>chat-container {</h1>
+<p>width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+}</p>
+<h1>messages {</h1>
+<p>height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+}</p>
+<h1>message-form {</h1>
+<p>display: flex;
+  padding: 10px;
+}</p>
+<h1>message-input {</h1>
+<p>flex-grow: 1;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}</p>
+<p>button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  margin-left: 5px;
+  cursor: pointer;
+}</p>
+<p>button:hover {
+  background-color: #0056b3;
+}
+```</p>
+<p><strong>Step 8: Add the following JavaScript code to the <code>script.js</code> file</strong></p>
+<p>This code snippet is the custom JavaScript file (<code>public/script.js</code>) for the front-end of the chatbot web application. It manages user interactions, displays messages, and communicates with the server using Socket.IO:</p>
+<p>```javascript
+// public/script.js</p>
+<p>const socket = io();</p>
+<p>const messageForm = document.getElementById("message-form");
+const messageInput = document.getElementById("message-input");
+const messages = document.getElementById("messages");</p>
+<p>function displayMessage(role, message) {
+  const div = document.createElement("div");
+  div.innerHTML = <code>&lt;p&gt;&lt;b&gt;${
+    role === "user" ? "You" : "Assistant"
+  }:&lt;/b&gt; ${message}&lt;/p&gt;</code>;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}</p>
+<p>messageForm.addEventListener("submit", (e) =&gt; {
+  e.preventDefault();</p>
+<p>const message = messageInput.value;
+  displayMessage("user", message); // Display user's message in the chat</p>
+<p>socket.emit("sendMessage", message, (error) =&gt; {
+    if (error) {
+      return alert(error);
+    }</p>
+<pre><code>messageInput.value = "";
+messageInput.focus();
+</code></pre>
+<p>});
+});</p>
+<p>socket.on("message", (message) =&gt; {
+  displayMessage("assistant", message); // Display assistant's message in the chat
+});
+```</p>
+<ol>
+<li>
+<p>A Socket.IO client instance is created using <code>io()</code> and assigned to the <code>socket</code> variable.</p>
+</li>
+<li>
+<p>DOM elements, such as the message form, message input field, and messages container, are selected using <code>getElementById</code>.</p>
+</li>
+<li>
+<p>The <code>displayMessage</code> function is defined to create and display chat messages in the messages container. It takes the message sender's role (either "user" or "assistant") and the message content as arguments, creates a new <code>div</code> element with the formatted message, appends it to the messages container, and scrolls the container to the bottom.</p>
+</li>
+<li>
+<p>An event listener is added to the message form to handle form submissions: a. The default form submission behavior is prevented using <code>e.preventDefault()</code>. The user's message is retrieved from the input field and displayed using the <code>displayMessage</code> function. The <code>sendMessage</code> event is emitted through the Socket.IO client with the user's message, and an error callback function is provided. If there's an error, it is displayed as an alert. Otherwise, the input field is cleared, and focus is returned to the input field.</p>
+</li>
+<li>
+<p>An event listener is added to the Socket.IO client to handle the <code>message</code> event: a. When a message is received from the server (the chatbot's response), the <code>displayMessage</code> function is called with the role "assistant" and the received message to display it in the chat.</p>
+</li>
+</ol>
+<h3>Test The Application</h3>
+<p><strong>Step 9: Start your server by running</strong></p>
+<p><code>typescript
+node app.js</code></p>
+<p>Now, you can visit <code>http://localhost:3000</code> in your browser and interact with the GPT-4 chatbot. The chatbot will respond to your messages, and you can have a conversation with it.</p>
+<p><img alt="" src="https://miro.medium.com/1*D_Dyd702N_n5VMPAibL-7g.png" /></p>
+<p>As you can see: the chat bot is aware of the context of the conversation and is providing answers which are taking the conversation history into consideration.</p>
+<h3>Conclusion</h3>
+<p>Congratulations on successfully building your AI-powered chatbot web application using Node.js, Socket.IO, and the GPT-4 API! By following this tutorial, you have unlocked a powerful tool for enhancing user engagement and transforming your website's user experience. With its context-aware capabilities and real-time interaction, your chatbot is well-equipped to meet the evolving expectations of today's users.</p>
+<p>As you continue to develop and refine your chatbot, remember that the possibilities are endless. You can further customize the chatbot's functionality, appearance, and integration with other services to cater to your specific needs. The foundation we've built together in this tutorial serves as a stepping stone for creating even more advanced and personalized AI-driven interactions.</p>
+<p>Happy coding!</p>

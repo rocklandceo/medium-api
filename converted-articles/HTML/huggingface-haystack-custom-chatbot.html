@@ -1,0 +1,84 @@
+<p><img alt="" src="https://miro.medium.com/1*U7EUlePDqjUa2js11eeNxg.png" /></p>
+<h1>Build A Chatbot Conversational App with Haystack &amp; HuggingFace</h1>
+<h3>ChatGPT and HuggingChat are both web-based Conversational Apps consisting of a UI, conversational memory and access to a LLM. Here I show how you can create your own conversational app using open-source technology.</h3>
+<p><em>I'm currently the Chief Evangelist @ <a href="https://www.humanfirst.ai/">HumanFirst</a>. I explore and write about all things at the intersection of AI and language; ranging from LLMs, Chatbots, Voicebots, Development Frameworks, Data-Centric latent spaces and more.</em></p>
+<p><em>In the coming week I aim to compile a matrix with the most notable LLM-based development frameworks for conversational applications.</em></p>
+<p>This article covers a simple notebook example on how to build a conversational app which has memory. There are two main components used for this demo, HuggingFace and Haystack.</p>
+<p>Via <em>Hugging Face</em>, <a href="https://huggingface.co/docs/api-inference/index">hosted Inference API</a>s can be used to access Large Language Models using simple HTTP requests.</p>
+<p>You don't need to download models, perform any fine-tuning or training. All you need is an API Key from HuggingFace, as seen below:</p>
+<p><img alt="" src="https://miro.medium.com/1*TFjQjs2CBAf16US3TcEqfA.png" /></p>
+<p>Haystack is an open-source, pro-code framework to build Autonomous Agents, prompt pipelines, search tools and more.</p>
+<p>The conversational app demo shown below will make use of three nodes; <code>PromptNode</code>, <code>ConversationalAgent</code> &amp; <code>ConversationSummaryMemory</code>.</p>
+<h2>PromptNode</h2>
+<p>The <a href="https://docs.haystack.deepset.ai/docs/prompt_node">PromptNode</a> is initialised with three parameters, <code>model_name</code>, <code>api_key</code>, and <code>max_length</code> to manage the model output.</p>
+<p>```python
+from haystack.nodes import PromptNode</p>
+<p>model_name = "OpenAssistant/oasst-sft-1-pythia-12b"
+prompt_node = PromptNode(model_name, api_key=model_api_key, max_length=256)
+```</p>
+<p>Here is the simplest implementation of the PromptNode:</p>
+<p>```python
+pip install --upgrade pip
+pip install farm-haystack[colab]</p>
+<p>from haystack.nodes import PromptNode
+prompt_node = PromptNode()
+prompt_node("What is the capital of Germany?")
+```</p>
+<p>And the output:</p>
+<p><code>plaintext
+['berlin']</code></p>
+<h2>ConversationSummaryMemory</h2>
+<p>Conversation memory is important for conversational apps to have a human-like element.</p>
+<p>Follow-up questions can be asked which reference previous conversational context in an implicit fashion.</p>
+<p><a href="https://docs.haystack.deepset.ai/docs/agent#conversational-agent-memory">ConversationSummaryMemory</a> is used to save space and also LLM tokens.</p>
+<p>The summary has a brief overview of the conversation history and will be updated as the conversation continues.</p>
+<p><em>Implementing Conversation Summary Memory:</em></p>
+<p>```python
+from haystack.agents.memory import ConversationSummaryMemory</p>
+<p>summary_memory = ConversationSummaryMemory(prompt_node)
+```</p>
+<h2>ConversationalAgent</h2>
+<p>And lastly, the conversational <a href="https://cobusgreyling.medium.com/agents-llms-multihop-question-answering-ca6521227b6c">agent</a>:</p>
+<p>```python
+from haystack.agents.conversational import ConversationalAgent</p>
+<p>conversational_agent = ConversationalAgent(prompt_node=prompt_node, memory=summary_memory)
+```</p>
+<p>A conversational agent is an agent holding conversational memory. To read more about agents, you can refer to this <a href="https://cobusgreyling.medium.com/llm-apps-2dc9c6ac7ebd">article</a>.</p>
+<p>Here is the complete code for the Conversational Agent:</p>
+<p>```python
+pip install --upgrade pip
+pip install farm-haystack[colab]</p>
+<p>from getpass import getpass
+model_api_key = getpass("Enter model provider API key:")</p>
+<p>from haystack.nodes import PromptNode</p>
+<p>model_name = "OpenAssistant/oasst-sft-1-pythia-12b"
+prompt_node = PromptNode(model_name, api_key=model_api_key, max_length=256)</p>
+<p>from haystack.agents.memory import ConversationSummaryMemory
+summary_memory = ConversationSummaryMemory(prompt_node)</p>
+<p>from haystack.agents.conversational import ConversationalAgent
+conversational_agent = ConversationalAgent(prompt_node=prompt_node, memory=summary_memory)</p>
+<p>conversational_agent.run("What are the five biggest countries in Africa?")
+conversational_agent.run("What is the  main languages spoken in these countries?")
+conversational_agent.run("Are any of the counries land-locked?")</p>
+<p>print(conversational_agent.memory.load())
+```</p>
+<hr />
+<p><em><strong>⭐️ Please follow me on <a href="https://www.linkedin.com/in/cobusgreyling/">LinkedIn</a> for updates on LLMs ⭐️</strong></em></p>
+<p><img alt="" src="https://miro.medium.com/1*lIm_TXh6TC9uGn63lOjZtQ.png" /></p>
+<p><em>I'm currently the <a href="https://www.linkedin.com/in/cobusgreyling">Chief Evangelist</a> @ <a href="https://www.humanfirst.ai">HumanFirst</a>. I explore and write about all things at the intersection of AI and language; ranging from LLMs, Chatbots, Voicebots, Development Frameworks, Data-Centric latent spaces and more.</em></p>
+<blockquote>
+<p><a href="https://www.humanfirst.ai"><strong>NLU design tooling</strong></a></p>
+</blockquote>
+<p><img alt="" src="https://miro.medium.com/1*qPfFI9uFl04n1ZUywxH38w.png" /></p>
+<p><img alt="https://www.linkedin.com/in/cobusgreyling" src="https://miro.medium.com/1*mwQw4LOeZdWG1AD8RDheXw.jpeg" /></p>
+<p><img alt="" src="https://miro.medium.com/1*qPfFI9uFl04n1ZUywxH38w.png" /></p>
+<blockquote>
+<p><a href="https://cobusgreyling.medium.com/subscribe"><strong>Get an email whenever Cobus Greyling publishes.</strong></a></p>
+<p><a href="https://www.cobusgreyling.com"><strong>COBUS GREYLING</strong></a></p>
+</blockquote>
+<p><img alt="" src="https://miro.medium.com/1*qPfFI9uFl04n1ZUywxH38w.png" /></p>
+<blockquote>
+<p><a href="https://haystack.deepset.ai/tutorials/24_building_chat_app"><strong>Building a Conversational Chat App | Haystack</strong></a></p>
+<p><a href="https://cobusgreyling.medium.com/chatgpt-apis-managing-conversation-context-memory-8b100dfe544a"><strong>ChatGPT APIs &amp; Managing Conversation Context Memory</strong></a></p>
+<p><a href="https://cobusgreyling.medium.com/build-your-own-chatgpt-or-huggingchat-876d01b1ef4a"><strong>Build Your Own ChatGPT or HuggingChat</strong></a></p>
+</blockquote>

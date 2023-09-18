@@ -1,0 +1,185 @@
+<h1>Scalable LLM Apps 101: Essential Data System Design Concepts</h1>
+<p>The Crucial System Design Concepts Behind Building High-Performance LLM Apps that Can Seamlessly Handle Massive User Traffic</p>
+<p><img alt="" src="https://miro.medium.com/0*8mJ2JoOUiWJS2a79.jpg" /></p>
+<p>If you're a solution architect or a senior software engineer or a lead engineer, this article isn't quite your cup of tea. I don't want to eat up your time when you could be doing something more valuable. But hey, if you're a data scientist, MLOps whiz, data engineer, or even a junior to mid-level software engineer, you're in for a treat!</p>
+<p>It all started back in the early 2010s. I started as a software engineer, just like so many others. But over time, I hopped onto the machine learning engineer bandwagon and then made a pit stop as a data scientist, especially after reading this article from <a href="https://hbr.org/2012/10/data-scientist-the-sexiest-job-of-the-21st-century">Harvard Business Review</a> before finally landing as a data engineer. It's been quite a ride switching between engineering and data science gave me some awesome perspectives and a growth mindset.</p>
+<p><img alt="" src="https://miro.medium.com/1*qoZlCqhBjqy5C6frMTts_A.png" /></p>
+<p>I like to think of myself as a mix of coding ninja and stats wizard. Better at software engineering than your average statistician and better at statistics than a regular software engineer. You get the drift!</p>
+<p>It all started in 2016 when I got hooked on AI and all things data during my thesis. From that point on, my work has been all about diving deep into the data realm - from data scientist to data engineer. I've designed and developed a few data systems that can scale like crazy. A lot of things have changed but whether it's on-premise or in the cloud, the core principles have stayed the same.</p>
+<p>Technology has come a long way since I started. Back then, I could never imagine that someday I will be able to use AI to incorporate all the messages between me and all of my ex-girlfriends and let them argue with each other in their tone about who is the best fit for me. Yep, you read that right! It's part of my quirky personal project, and it never fails to crack me up.</p>
+<h2>Eternal Conflict Between Data Scientist and Software Engineer?</h2>
+<p>Over time, I've had the opportunity to work on various software and data systems, even delving into AI apps that can scale like champs. Along the way, I've collaborated with some brilliant minds, including data scientists and machine learning engineers. These folks are absolute experts in their respective fields, but when it comes to putting their models into production or integrating them into apps used by millions of users, things can get tricky. Efficient and effective communication becomes a real pain point.</p>
+<p>You see, it's like two foreigners trying to talk to each other in completely different languages. The software engineer and the data scientist struggle to convey their ideas clearly to their counterparts.</p>
+<p><img alt="Diablo Art" src="https://miro.medium.com/0*_bXlaFzRR0Dfg5lR" /></p>
+<p>So, in this article, my aim is to break down system designs for anyone who has a basic understanding or an interest in this field. Especially for my audience, who are mainly data scientists and machine learning engineers, I want to shed some light on the system designs that software engineers typically deal with. The goal is to help you speak "the same language" and communicate more effectively.</p>
+<p>Now, I won't get into the nitty-gritty technical details of each design here, as that would take time and hands-on practice to truly grasp. I'll just provide enough insight to get you on the right track and spark your curiosity.</p>
+<h2>System Design Fundamental</h2>
+<h3>Vertical Scaling</h3>
+<p>The easiest and simplest one. It's like pimping out a single machine, giving it a serious upgrade in stuff like CPU, memory, or storage to make it perform like a rockstar. It's perfect for when you just want things to be straightforward and you're not expecting to go crazy huge.</p>
+<p>Vertical scaling shines in certain situations, like when you want to beef up your database performance, handle those ginormous machine learning models, or process real-time data like a boss. But, there's always a catch, right? It can be pretty costly, has its limits when it comes to scaling and worst of all, it might cause some downtime when you're doing those upgrades. So, it's not all rainbows and unicorns, but it does have its time and place (in the good old day)!</p>
+<p><img alt="just increase the instance spec" src="https://miro.medium.com/1*OVpQgOcIjZingvqDxPgesQ.png" /></p>
+<p><strong>Use Cases for Vertical Scaling:</strong></p>
+<ul>
+<li>
+<p><strong>Database Management Systems</strong>: When a relational database, such as MySQL or PostgreSQL, starts experiencing performance bottlenecks due to increased data volume and query complexity, vertical scaling can be employed to boost the database server's resources, leading to faster query response times.</p>
+</li>
+<li>
+<p><strong>Machine Learning Models</strong>: Data scientists dealing with large-scale machine learning models may face memory limitations during training. Vertical scaling can address this issue by using machines with larger RAM capacities, allowing the training of more complex models or processing larger datasets.</p>
+</li>
+<li>
+<p><strong>Real-time Data Processing</strong>: In streaming data applications, where real-time data processing is essential, vertical scaling can be utilized to increase the processing power of the servers, enabling faster data ingestion, transformation, and analysis.</p>
+</li>
+</ul>
+<h3>Horizontal Scaling</h3>
+<p>So, the old way was pretty limited, but there's a much better approach - let's add some replicas! This cool technique, called horizontal scaling, lets each server handle just a part of the requests. And the best part is, we can practically scale this thing forever! No need for fancy, expensive machines either.</p>
+<p>But wait, there's more! Adding replicas also gives us some backup power. If one server decides to take a nap, don't worry! The others got our back and will keep fulfilling those requests like champs. Say goodbye to that single point of failure from before!</p>
+<p><img alt="Just add more instances" src="https://miro.medium.com/1*Z8Pi87-MXedFA2UJTnrs7Q.png" /></p>
+<p><strong>Use Cases for Horizontal Scaling:</strong></p>
+<ul>
+<li>
+<p><strong>Web Applications:</strong> Horizontal scaling is widely used in web applications to handle increasing user traffic. By adding more servers to a load balancer, the application can effectively distribute incoming requests, ensuring faster response times and a smoother user experience.</p>
+</li>
+<li>
+<p><strong>Big Data Processing:</strong> For data-intensive tasks like big data processing and analytics, horizontal scaling allows distributing data processing across multiple nodes, enabling faster data ingestion, transformation, and analysis. EMR and Spark are examples.</p>
+</li>
+<li>
+<p><strong>Distributed Databases:</strong> NoSQL databases, like Cassandra or MongoDB, often rely on horizontal scaling to achieve scalability and high availability. Data is partitioned across nodes, allowing for efficient storage and retrieval of large datasets.</p>
+</li>
+</ul>
+<h3>Load Balancer</h3>
+<p>The downside of horizontal scaling is this approach is much more complicated. Picture this: we got a bunch of servers, and we need to make sure they all pull their weight. If one server is down, we need to route the request from the current user from that server to another server, hence, increasing the request processing of the other server. How do we handle this situation?</p>
+<p><img alt="When one of the node is down" src="https://miro.medium.com/1*d1OvTx6l_wkql9wZVqjjIg.png" /></p>
+<p>Enter the hero of the story: the load balancer! Think of it as a traffic cop for incoming requests. It's like, "Hey, request, go to this server!" Boom! Problem solved. It's kinda like a reverse proxy, you know, directing stuff to the right place.</p>
+<p><img alt="" src="https://miro.medium.com/1*HAA2D6Q5npAGTPtIf60wgw.png" /></p>
+<p>Now, we got options here. We can use this cool algorithm called "round robin" - it's like going in a circle, spreading the traffic evenly among our servers. Or we can get all fancy and "hash" the incoming request ID. It's like playing matchmaker, pairing the request with the perfect server. The goal is simple: make sure each server gets a fair share of the action.</p>
+<p>If our servers are spread out all over the world, we can use the load balancer to be super smart. It can route the requests to the nearest server location. So, it's like getting that pizza delivered right to your doorstep. That's where content delivery networks come into play, making sure we get our stuff quickly, no matter where we are on this big blue marble.</p>
+<h3>CDN aka Content Delivery Network</h3>
+<p>If you're just serving static files like images videos and sometimes even HTML CSS and JavaScript files, here's the easy peasy way for serving up all those cool static files: CDN.</p>
+<p>CDN it's a network of servers located all around the world. CDNs aren't all about running fancy applications or doing complex logic. Nah, they're way simpler than that. Their main job is to grab all those files you've got hosted on your own server, which we call the "origin server," and make copies of them on their own servers. Easy peasy!</p>
+<p><img alt="by OpenPR" src="https://miro.medium.com/0*lT3iXk4_yZQqwkGi.jpg" /></p>
+<p>And guess what? They can do this in two cool ways. They can either "push" the files from your server to theirs, or they can "pull" them from your server whenever someone needs them. It's like they're creating a bunch of backups, but instead of saving it all on one machine, they spread it out across their servers all around the globe.</p>
+<p>CDNs are not the only caching trick out there. From here, things started to get a bit complicated.</p>
+<h3>Caching</h3>
+<p>Caching is like making copies of data so we can grab it faster later on. You know how making those network requests can be quite pricey? Well, our clever browsers have a nifty trick - they stash some of that data onto our disk for later use. But hey, reading from the disk can still be a bit slow.</p>
+<p>So, our trusty computers take it up a notch! They'll copy that data into memory because accessing memory is much quicker than going to the disk. But wait, there's more! Reading from memory can still take its sweet time.</p>
+<p><img alt="" src="https://miro.medium.com/1*6SfuFWNyYLmFzE_bsGzQ6Q.png" /></p>
+<p>So, enter the super-smart operating systems! They'll grab a subset of that data and store it in the CPU cache - the L1, L2, or L3 cache, depending on how fancy our CPU is. This cache is like the holy grail of speed! It's lightning-fast and ready to deliver the goods in a flash.</p>
+<p>Now, when computers need to talk to each other, they use this caching magic to their advantage. Instead of always fetching fresh data from other computers across the network, they can keep a local copy in their cache, which saves time and cuts down on those expensive network requests.
+But how do the computers talk to each other? Well, there is something called IP (not Intellectual Property but Internet Protocol).</p>
+<h3>TCP/IP</h3>
+<p>Every computer in a network gets its very own unique identifier called an IP address. It's like a digital name tag that shouts, "Hey, it's me!"
+We got the TCP/IP duo, which is actually the Internet Protocol Suite. Don't let the name fool you though, it's not just about TCP, but also includes UDP (another cool player in the networking game).</p>
+<p>Now, let's focus on TCP for a moment. It's like the conductor of the data orchestra. It sets up a bunch of rules, or protocols, that decide how we send data over the vast Internet. It's kinda like how we have a system for sending mail in the real world - there are rules for that too!</p>
+<p>When we send data, like files or messages, they're split into small packets. It's like dividing a big cake into yummy slices. These packets take a trip over the Internet, navigating through all those networks and routers. And to make sure they don't get lost on their journey, each packet gets a number - like little labels on envelopes.</p>
+<p>When they arrive at their destination, they're sorted out and reassembled in the correct order using those numbers. It's like putting those cake slices back together to get the whole cake again! But sometimes, packets might go missing or take a detour, and that's where TCP shines. It's like a superhero that ensures missing or messed-up packets get sent again. Talk about reliability!</p>
+<p>That's why TCP is a big deal, and why lots of other protocols, like HTTP (you know, the stuff that makes websites work) and WebSockets (for real-time communication), rely on TCP's superpowers to do their magic.</p>
+<h3>Domain Name System</h3>
+<p>While computers use IP addresses as a range of numbers to identify devices on a network, the question arises: how does your computer know the IP address corresponding to a domain like "<a href="https://medium.com/@ryanntk">https://medium.com/@ryanntk</a>" when you type it into your search bar?</p>
+<p>Well for that, we have the Domain Name System, a highly decentralized service that performs the essential task of translating domains to their corresponding IP addresses. When you acquire a domain from a DNS registrar, you gain the ability to create a DNS A record, standing for "Address," where you can enter the IP address of your server.</p>
+<p><img alt="By David Mohaisen" src="https://miro.medium.com/1*JFL4h1_6gWY4Btf31hxNmQ.png" /></p>
+<p>Here's how it works: when you initiate a search, your computer sends a DNS query to retrieve the IP address associated with the domain. The DNS system utilizes the A record mapping you've set up, promptly providing the desired IP address. This mapping is like a directory that guides your computer to the right destination amidst the vast expanse of the Internet.</p>
+<p>To ensure efficient browsing, your operating system smartly caches the obtained IP address. This clever caching process means that your computer won't need to make a DNS query for the same domain every single time you access it. It's like your computer's personal memory that stores commonly accessed domains, enabling faster and more seamless experiences.</p>
+<h3>HTTP/HTTPS</h3>
+<p>Here it comes to the most familiar thing to you: HTTP, the rockstar behind how we interact with the web!</p>
+<p>TCP is a bit too low-level, dealing with individual data packets and all - we don't need that headache! That's where HTTP, our trusty application-level protocol, steps in. It's like the hero we developers use on a daily!</p>
+<p>HTTP follows the classic client-server model. The client initiates a request, just like ringing up your favourite pizza joint for a delivery. The request has two parts - the request header, which is like the shipping label on a package. It tells you where it's going, who sent it, and some other handy info about the package. Then there's the request body, the juicy contents of that package.</p>
+<p><img alt="by IONOS" src="https://miro.medium.com/1*GKn_3VPbscyDJQMgBB6usg.png" /></p>
+<p>To test this out, just fire up your Dev (right-click and hit Inspect) tools and hop over to the Network Tab. Click "<strong>subscribe</strong>," and you'll get an up-close look at the request in action. You'll see the response comes with its own header and body too - it's like a conversation between the client and the server, all in digital language!</p>
+<p>Even within the awesomeness of HTTP, there's still room for variety! Yup, multiple API patterns to explore, like different flavours of ice cream! Next step, we will uncover the world of HTTP and how the modern website/apps these days are built on top of it.</p>
+<h2>Advance System Design Concepts</h2>
+<h3>REST</h3>
+<p>The most popular one is REST which is standardization around HTTP APIs, keeping things stateless and following a set of consistent guidelines. You see when you're dealing with REST, you'll be grooving to the beats of status codes in the response header!</p>
+<p>A successful request deserves a pat on the back, and REST says, "Hey, here's a 200 code in the response header to let you know everything's all good!" But hey, we all have our off days, right? So, if a client sends a bad request, REST will respond with a 400 code - like a gentle reminder to double-check those deets!</p>
+<p><img alt="By Astera" src="https://miro.medium.com/0*Gt1kEBjIcl75YfP6.png" /></p>
+<p>And, oh, sometimes the server might have a little hiccup! So, if there's an issue on the server's side, REST will coolly return a 500 code. It's like saying, "Hey, we're working on it, don't worry and come back another time!"</p>
+<p>REST is like the language of the web - it speaks in these clear, standardized codes to ensure smooth communication between clients and servers. It's like a universal rhythm that everyone can dance to!</p>
+<h3>GraphQL</h3>
+<p>GraphQL - is the cool kid on the block when it comes to querying data! It's like this powerful tool that lets you ask for exactly what you need, and nothing more. It's all about getting the goods without any extra baggage!</p>
+<p><img alt="by Devopedia" src="https://miro.medium.com/0*KHPf5Sbg_U8NVibC.png" /></p>
+<p>With GraphQL, clients can make a single request to the server, specifying the exact fields and relationships they require. It's like going to a taco truck and saying, "I want two chicken tacos, some guac, and a bit of salsa, please." And boom! You get exactly that - no mystery burritos showing up on your plate!
+Compare to REST APIs, this eliminates over-fetching, where unnecessary data is returned, and under-fetching, where multiple requests are needed to retrieve related data. It's akin to providing a personalized shopping list to a grocery store, ensuring you receive only the items you need.</p>
+<p><img alt="by Devopedia" src="https://miro.medium.com/0*bDjOk9uQNNtySKVF.jpg" /></p>
+<p>One of the key advantages of GraphQL is its ability to traverse multiple data sources with a single query. Clients can obtain data from different parts of the application seamlessly, streamlining the process and enhancing overall efficiency. This versatility grants developers fine-grained control over data access, reducing response payload size and minimizing network latency.</p>
+<h3>gRPC</h3>
+<p>gRPC is an open-source remote procedure call (RPC) framework developed by Google. It was also meant to be an improvement over REST APIs.</p>
+<p>Its reach extends beyond traditional server environments through the advent of gRPC Web. This innovative extension has gained significant traction in recent years, enabling developers to utilize gRPC directly from web browsers, opening new possibilities for client-server interactions.</p>
+<p>At the core of gRPC's performance boost lies the utilization of Protocol Buffers (protobufs) as the data interchange format, in contrast to the JSON format predominantly used in REST APIs. Protocol Buffers present a notable advantage by serializing data into a compact binary format, resulting in significantly improved storage efficiency. Transmitting smaller data payloads over the network translates to faster communication, reducing latency and enhancing overall system responsiveness.</p>
+<p><img alt="By Wallarm" src="https://miro.medium.com/0*QmUeY_4iODjyk-Yg.jpg" /></p>
+<p>Nevertheless, this efficiency comes with a trade-off. While Protocol Buffers excel in optimizing data transmission, JSON's allure lies in its human readability due to its plain text representation. JSON provides a straightforward and easily interpretable data format, making it simpler for developers to debug, inspect, and understand the data being exchanged. On the other hand, Protocol Buffers, with their binary format, may be more challenging for human interpretation.</p>
+<p>So, the decision to choose between gRPC and JSON/REST APIs depends on the specific requirements of the application. For high-performance server-to-server communication or data-intensive tasks, gRPC's protocol buffers shine, reducing network overhead and enhancing scalability. In contrast, for scenarios where human readability and ease of debugging are crucial, JSON/REST APIs continue to be a popular choice.</p>
+<h3>WebSocket</h3>
+<p>WebSockets, a protocol that operates over a single, full-duplex TCP connection, has emerged as a game-changer in enabling real-time, bi-directional communication between clients and servers. Its unique capabilities have addressed a significant challenge faced by applications like chat apps, where immediate message delivery is crucial for a seamless user experience.</p>
+<p>To grasp the essence of the problem that WebSockets solve, let's consider the scenario of a chat application. In a typical HTTP-based implementation, when someone sends you a message, your device would have to frequently poll the server by making periodic requests to check if there are any new messages available. This approach, known as polling, can be inefficient and leads to unnecessary network traffic, especially when updates are infrequent.</p>
+<p><img alt="" src="https://miro.medium.com/0*dyGRvsIU7DiJFJ3L.png" /></p>
+<p>WebSockets, on the other hand, revolutionize this process by supporting full-duplex communication. In the chat app context, this means that whenever a new message is sent to you, it is immediately pushed to your device without any need for repeated polling. Likewise, when you send a message, it is instantly pushed to the receiver's device through the established WebSocket connection. This bi-directional communication streamlines message delivery, reducing latency, and providing a real-time experience for users.</p>
+<p>The advantages of WebSockets extend beyond chat apps. Any application requiring instant updates, such as collaborative tools, online gaming, financial trading platforms, and live streaming services, can greatly benefit from WebSockets' ability to facilitate responsive, bidirectional communication.</p>
+<p><img alt="By **Mihail Gaberov**" src="https://miro.medium.com/0*TREERxUNjKK6AneY.png" /></p>
+<p>However, it's essential to recognize that WebSockets are not a one-size-fits-all solution. For applications with less frequent real-time communication needs, using traditional HTTP and RESTful APIs might be more appropriate</p>
+<h3>Database (SQL and NoSQL)</h3>
+<p>When it comes to data storage, we have two primary options: SQL or relational database management systems (RDBMS) like MySQL and PostgreSQL, and the alternative of simply storing everything in text files on disk. However, databases offer numerous advantages that make them a preferred choice over simplistic text file storage.</p>
+<ul>
+<li>
+<p><strong>Efficiency through Data Structures</strong>: Databases allow for efficient data storage, utilizing sophisticated data structures like B-trees. These data structures are designed to optimize data organization, enabling swift data retrieval and manipulation. By arranging data into rows and tables, databases provide a structured environment for efficient querying and analysis.</p>
+</li>
+<li>
+<p><strong>Fast Data Retrieval with SQL Queries</strong>: One of the standout features of relational databases is their ability to retrieve data rapidly using SQL queries. The structured nature of data in rows and tables enables quick and precise data retrieval, making them ideal for applications that demand complex data analysis and reporting capabilities.</p>
+</li>
+</ul>
+<p><strong>ACID Compliance</strong>: Ensuring Data Integrity and Durability:</p>
+<p>Relational database management systems typically adhere to ACID properties, which ensure data integrity and durability:</p>
+<ul>
+<li>
+<p><strong>Atomicity</strong>: Every transaction is treated as an "All or Nothing" operation. It either fully completes, ensuring all changes are applied or is entirely rolled back if any part fails, preventing inconsistent or partial updates.</p>
+</li>
+<li>
+<p><strong>Consistency</strong>: ACID compliance guarantees that foreign key constraints and other rules are strictly enforced. This ensures that data remains consistent and adheres to predefined standards.</p>
+</li>
+<li>
+<p><strong>Isolation</strong>: Different concurrent transactions operate independently, ensuring that one transaction's modifications do not interfere with others. This maintains data integrity and prevents conflicts.</p>
+</li>
+<li>
+<p><strong>Durability</strong>: Data is stored on disk, providing durability even in the event of system failures or machine restarts. After a successful transaction, the changes are permanent and persisted.</p>
+</li>
+</ul>
+<p><strong>NoSQL Databases: A Response to Scalability Challenges:</strong></p>
+<p>While consistency is crucial for certain applications, it can also impose limitations on scalability, especially in distributed systems handling massive amounts of data. This led to the creation of NoSQL databases, which prioritize scalability and flexibility over strict consistency. NoSQL databases drop the concept of relations and offer various types, such as key-value stores, document stores, and graph databases.</p>
+<h3>Sharding</h3>
+<p>When addressing the challenges posed by consistency in database scaling, the technique of sharding emerges as a powerful solution. If we don't have to enforce any foreign key constraints that means we can break up a database into smaller, more manageable pieces and distribute them across different machines, enabling horizontal scaling to accommodate growing data demands. By doing so, we can achieve improved performance and handle larger workloads efficiently.</p>
+<p><img alt="By Mark Drake" src="https://miro.medium.com/0*w-q0dt7D-LqwSdUs.png" /></p>
+<p>To enable sharding, we rely on the concept of a "Shard key," a critical component in the sharding process. The Shard key serves as the basis for determining which portion of the data resides on which machine. For instance, in a table of people, the Shard key could be the unique ID of each person.</p>
+<p><img alt="By Mark Drake" src="https://miro.medium.com/0*FtSQmsLVDeN90Ta6.png" /></p>
+<p>But sharding can get overcomplicated.</p>
+<h3>Replication</h3>
+<p>A simpler approach is replication. If we want to enhance database performance, scalability, and availability, we can make read-only copies of the database (leader-follower replication), and read loads can be efficiently distributed. Alternatively, leader-leader replication allows both reads and writes on replicas but can lead to inconsistent data.</p>
+<p><img alt="By Nader Medhat" src="https://miro.medium.com/0*fM6xDW1jkfC_fiU3.png" /></p>
+<p>This approach is suitable when multiple replicas are needed in different regions. However, keeping replicas in sync can be complex, especially where we have data centres all around the world/region, which led to the formulation of the CAP theorem</p>
+<h3>CAP Theorem</h3>
+<p>When designing replicated databases, the CAP theorem comes into play, guiding the trade-offs to be considered. The theorem states that during a network partition (communication failure), we can either prioritize data consistency or data availability, but not both. This means that database designers must make a decision on which aspect to prioritize based on their application's requirements.</p>
+<p><img alt="" src="https://miro.medium.com/0*r1FSONA1eec4YNxN.png" /></p>
+<blockquote>
+<p><em>It's essential to note that the notion of consistency in the CAP theorem is different from the traditional ACID (Atomicity, Consistency, Isolation, Durability) properties, which aim for strong consistency within a single database transaction.</em></p>
+</blockquote>
+<p>The CAP theorem has been a subject of controversy, as it forces designers to make difficult decisions between consistency and availability, depending on their system requirements. To address some of the complexities and nuances in distributed systems, the PACELC theorem was later introduced, offering a more comprehensive and nuanced perspective on the trade-offs among partition tolerance (P), availability (A), and consistency © in the presence of latency (E) and network performance (L).</p>
+<h3>Message Queues</h3>
+<p>They're like databases, but cooler! Why? Well, they come with durable storage and can be replicated for backup or shared for some serious scalability. Message queues are super useful when you're drowning in data, and your system can't keep up. Just toss that data into the queue, and it'll be safe and sound until you're ready to process it at your own pace. No data left behind!</p>
+<p><img alt="" src="https://miro.medium.com/0*hGDLuBLOSd-e6jzu.jpeg" /></p>
+<p>Message queues also give you the fantastic power of decoupling different parts of your app. Say goodbye to those tight connections between components. With message queues as the mediator, your app's components can talk asynchronously and independently. It's like each part is doing its own dance at the party, no stepping on each other's toes!</p>
+<p>These queues have a whole bunch of tricks up their sleeves. They're pros at load levelling, making sure your system won't freak out during traffic spikes. And hey, they handle those time-consuming tasks in the background, so your app can stay snappy and responsive for your users.</p>
+<p>The possibilities are endless! Event-driven architectures, microservices, you name it - message queues fit right in. They're like the glue that holds everything together, making sure your system runs smoothly and reliably.</p>
+<hr />
+<p>If you are a visual learner, I found this video to be thoroughly explained and animated, catering to individuals seeking to see more visualization of the concepts.</p>
+<iframe src="https://cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.youtube.com%2Fembed%2Fi53Gi_K3o7I%3Ffeature%3Doembed&display_name=YouTube&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Di53Gi_K3o7I&image=https%3A%2F%2Fi.ytimg.com%2Fvi%2Fi53Gi_K3o7I%2Fhqdefault.jpg&key=a19fcc184b9711e1b4764040d3dc5c07&type=text%2Fhtml&schema=youtube" title="" height="480" width="854"></iframe>
+
+<hr />
+<p>This is pretty much a super high level of system design concept that the developer works on a daily basis. I hope that the information provided here has been valuable to your learning journey.</p>
+<p>If you do like this article, please give it a clap and follow me for more upcoming posts in the future. If you have any questions, please leave a comment, I will try to answer as soon as possible.</p>
+<p>If you need to reach out, don't hesitate to drop me a message via my <a href="https://twitter.com/kiennt_">Twitter</a> or my <a href="https://www.linkedin.com/in/ryan-nguyen-abb844a4/">LinkedIn</a> and subscribe to my <a href="https://howaibuildthis.substack.com/">substack</a> as I will cover more learning practice in depth in my substack channel.</p>
+<h2>Additional Contents</h2>
+<p>For someone who is the first time reading my work, here are a couple of articles on building LLM applications that I hope you will find helpful.</p>
+<blockquote>
+<p><a href="https://medium.com/@ryanntk/deploying-hugging-face-embedding-models-on-aws-sagemaker-a-comprehensive-tutorial-with-langchain-af8e0b405b51"><strong>AWS SageMaker real-time endpoints with HuggingFace Embedding Models: A Guide for LLM Application</strong></a></p>
+<p><a href="https://medium.com/@ryanntk/choosing-the-right-embedding-model-a-guide-for-llm-applications-7a60180d28e3"><strong>Choosing the Right Embedding Model: A Guide for LLM Applications</strong></a></p>
+<p><a href="https://medium.com/@ryanntk/deploying-hugging-face-embedding-models-on-aws-sagemaker-a-comprehensive-tutorial-with-langchain-af8e0b405b51"><strong>AWS SageMaker real-time endpoints with HuggingFace Embedding Models: A Guide for LLM Application</strong></a></p>
+</blockquote>
+<p>Twitter: <a href="https://twitter.com/kiennt_">https://twitter.com/kiennt_</a></p>
+<p>LinkedIn: <a href="https://www.linkedin.com/in/ryan-nguyen-abb844a4/">https://www.linkedin.com/in/ryan-nguyen-abb844a4/</a></p>

@@ -1,0 +1,394 @@
+<h1>Zero to One: A Guide to Building a First PDF Chatbot with LangChain &amp; LlamaIndex - Part 1</h1>
+<p>Welcome to Part 1 of our engineering series on building a PDF chatbot with LangChain and LlamaIndex. Don't worry, you don't need to be a mad scientist or a big bank account to develop and train a model. With the rise of Large Language Models (LLMs) such as ChatGPT and GPT-3, it's now easier than ever to build intelligent chatbots that are smarter than your average bear and can go through mountains of your documents to provide accurate responses to your inputs.</p>
+<p><img alt="" src="https://miro.medium.com/0*ShfAHkcNllHQnR0h.png" /></p>
+<p>By the way, before we dig further, I'm starting my own newsletter on Substack call <strong><a href="https://howaibuildthis.substack.com/">How AI Built This</a></strong>. I will continue to write on both platforms but if you would like to keep up-to-date content then you can subscribe to my <a href="https://howaibuildthis.substack.com/">Substack newsletter</a></p>
+<blockquote>
+<p><a href="https://howaibuildthis.substack.com/"><strong>How AI Built This | Ryan Nguyen | Substack</strong></a></p>
+</blockquote>
+<p>In this series, we will be exploring how to use pre-trained LLMs to create a chatbot that can analyze and summarize and do question-answering on PDF documents, making it an incredibly useful tool for businesses and individuals alike. Whether you want to build a personal assistant, a customized chatbot, or an automated document analysis system, this series will provide you with the knowledge you need to take your first steps towards building your own LLM-powered chatbot. So, let's dive into the world of LLMs and chatbots with LangChain and LlamaIndex!</p>
+<h2>What we will build</h2>
+<p>The idea of using ChatGPT as an assistant to help synthesize documents and provide a question-answering summary of documents are quite cool. At first, the idea was to fine-tune the model with specific data to achieve this goal, but it can be costly and requires a large dataset. Additionally, fine-tuning the model can only teach it a new skill rather than provide complete information about the documents.</p>
+<p>Another approach is to use prompt engineering to provide the context in the prompts for (multi-)document QA. However, the GPT model has a limited attention span, and passing along context to the API can also be expensive, especially when dealing with a large number of customer feedback emails and product documents.</p>
+<h3>So how are we building it?</h3>
+<p>Following are steps on how we accomplish such those things:</p>
+<ul>
+<li>
+<p>We first load the document (PDF, HTML, text, Database, etc)</p>
+</li>
+<li>
+<p>We then split data into chunks, create embedding on top of data to represent data in some form of the number and do indexes on top of embedding data. This way we can do a semantic search based on all the popular algorithms.</p>
+</li>
+<li>
+<p>For each question, we will search through indexes and embedding data to extract the relevant information only.</p>
+</li>
+<li>
+<p>Pass through questions and relevant data into LLM Model. We will use Open AI in this series.</p>
+</li>
+</ul>
+<p>It sounds too complex and it is indeed. That is where <strong><a href="https://python.langchain.com/en/latest/">Langchain</a></strong> and <strong><a href="https://gpt-index.readthedocs.io/en/latest/">LLamaIndex</a></strong> come to the rescue. The only difficult thing here is to get yourself familiar with that two frameworks. The rocket science of indexes and embedding and LLM stuff will be taken care of by those frameworks :)</p>
+<h3>How do we start</h3>
+<p>Yet the road to enlightenment is not an easy one, and many challenges lie ahead for those. I have had a hard time understanding all the concepts and put a lot of practice to get myself familiar with building LLM applications. There are no series and end-to-end tutorials out there and all you have is official documents, and trust me, you must go through the document if you want to be proficient. However, the official document is quite hard and sometimes short and not updated. You may find a <em>very very very very</em> hard time understanding all the concepts with a lot of hectic what and why questions. It will be challenging if you don't have a background in data science or machine learning, etc. But don't worry, I aim to explain all of those in this series.</p>
+<p><img alt="High-level LLM application architect by Roy" src="https://miro.medium.com/0*je4PUmND9u2cIUVS.jpeg" /></p>
+<blockquote>
+<p>This series intend to give you not only a quick start of learning about the framework but also to arm you with tools, and techniques outside Langchain and LLamaIndex to incorporate into your app and even go further to bring your apps to production.</p>
+</blockquote>
+<p>I won't go into detail about Langchain or LLamaIndex in this part 1 but rather keep it in a separate post. This Part 1 is all about building, to give you the taste you like first before showing you the recipe and ingredients.</p>
+<p>Our menu will serve the following meals:</p>
+<ul>
+<li>
+<p>Generative Question-Answering with Langchain</p>
+</li>
+<li>
+<p>Generative Question-Answering with LLamaIndex</p>
+</li>
+<li>
+<p>Bonus section.</p>
+</li>
+</ul>
+<p>Let's start shall we?</p>
+<h2>Housekeeper</h2>
+<p>To follow along in this tutorial, you will need to have the OpenAI API keys and Python packages.
+To get OpenAI API keys, you can follow this article <a href="https://www.howtogeek.com/885918/how-to-get-an-openai-api-key/">here</a>
+In short, go to <a href="https://platform.openai.com/">https://platform.openai.com</a>, log in or signup for a new account → Click to your profile → View API Keys and create a new secret key</p>
+<p><img alt="" src="https://miro.medium.com/0*AXFb3THBV7C8VBR4.png" /></p>
+<p><img alt="" src="https://miro.medium.com/0*7Ya48O_Xm4LxM9fX.png" /></p>
+<blockquote>
+<p>Remember to setup usage limit to not break your bank (hard lesson learnt)</p>
+</blockquote>
+<iframe src="https://cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fgiphy.com%2Fembed%2FyIxNOXEMpqkqA%2Ftwitter%2Fiframe&display_name=Giphy&url=https%3A%2F%2Fmedia.giphy.com%2Fmedia%2FyIxNOXEMpqkqA%2Fgiphy.gif&image=https%3A%2F%2Fi.giphy.com%2Fmedia%2FyIxNOXEMpqkqA%2Fgiphy.gif&key=a19fcc184b9711e1b4764040d3dc5c07&type=text%2Fhtml&schema=giphy" title="" height="322" width="435"></iframe>
+
+<p>Alternatively, we can use other LLM providers but for this blog, we will use OpenAI. I will give your more content and ideas on how to integrate with different LLM providers as well as pros and cons for each (subscribe guyssss)</p>
+<p>Assuming you already have Python in your machine, we will need python &gt;= 3.7 to work on, the NExt step is to create a virtual environment and install the following Python library:</p>
+<p>```shell</p>
+<h2>to create virtual environment</h2>
+<p>$ python3 -m venv llm_app_env</p>
+<h2>on MacOS or Linux</h2>
+<p>$ source llm_app_env/bin/activate</p>
+<h2>on Window</h2>
+<p>$ llm_app_env\Scripts\activate.bat</p>
+<h2>then install the following libraries.</h2>
+<p>openai[embeddings]==0.27.6
+langchain==0.0.155
+pypdf==3.8.1
+tiktoken==0.3.3
+faiss-cpu==1.7.4
+unstructured==0.6.2
+chromadb==0.3.21
+llama-index==0.6.1
+jupyterlab
+```</p>
+<h2>Langchain Starter</h2>
+<p>LangChain is a powerful open-source tool that makes it easy to interact with large language models and build applications. Think about it as a middleman to connect your application to a wide range of LLM Providers like OpenAI, Cohere, Huggingface, Azure OpenAI and more.</p>
+<p>But LangChain isn't just a tool for accessing pre-trained language models. It also provides a number of useful features and functionalities that allow you to build custom applications and tools. For example:</p>
+<ul>
+<li>
+<p>Questions-answering and text summarization with your own documents</p>
+</li>
+<li>
+<p>Deal with memory and long documents with limited token issues.</p>
+</li>
+<li>
+<p>Awesome integration with OpenAI ChatGPT Retriever Plugin</p>
+</li>
+<li>
+<p>Multiple chains to work on your defined problems or take it higher with Agents.</p>
+</li>
+<li>
+<p>And many more.</p>
+</li>
+</ul>
+<p>At a high level, Langchain is a great framework that makes the power of the creation of AI applications now in your hand. More amazingly, it is open-source so you know it is in the good hand of brilliant communities. I won't go too deep into LangChain and its component, you can find more about Langchain on their <a href="https://python.langchain.com/en/latest/">website</a> or subscribe to my substack to get the deep dive development of Langchain in the future.</p>
+<p>As the main purpose of this blog is to keep things simple and go straight into development, let's fire up your jupyter notebook and start coding.</p>
+<h3>Setup OpenAI API KEY</h3>
+<p>```python
+import logging
+import sys
+import os</p>
+<p>os.environ["OPENAI_API_KEY"] = "<YOUR_OPENAI_API_KEY>"
+```</p>
+<h3>Load and split the data</h3>
+<p>```python</p>
+<h2>load the PDF using pypdf</h2>
+<p>from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter</p>
+<h1>load the data</h1>
+<p>loader = PyPDFLoader('../notebooks/documents/Apple-Financial-Report-Q1-2022.pdf')</p>
+<h1>the 10k financial report are huge, we will need to split the doc into multiple chunk.</h1>
+<h1>This text splitter is the recommended one for generic text. It is parameterized by a list of characters.</h1>
+<h1>It tries to split on them in order until the chunks are small enough.</h1>
+<p>text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+data = loader.load()
+texts = text_splitter.split_documents(data)</p>
+<h1>view the first chunk</h1>
+<p>texts[0]
+```</p>
+<h3>Simple Question Answering</h3>
+<p>Now I know we are going to use OpenAI as LLM Provider so it makes total sense that we should go with OpenAI Embedding. But please <strong>note</strong> that the OpenAI Embedding API use <strong>"text-davinci-003"</strong> model, you can view the pricing <a href="https://openai.com/pricing">here</a>, it may cost less for a small document but be careful when you intend to apply for a big chunk of documents (don't break your bank guys).</p>
+<p><strong>NExt steps</strong>, we will import the <a href="https://docs.trychroma.com/">Chroma</a>. If you are not familiar with Chroma, then you can find the detail on its official website. Again, I will cover Chroma and its alternative sometime in the future. So the question is, what is Chroma and why do we need it?</p>
+<p>In short, Chroma is the embedding database, not like the traditional SQL database or the not-too-new NoSQL database like what you usually work with. It is embedding databases and it makes it easy to build LLM apps.</p>
+<p><img alt="" src="https://miro.medium.com/0*-4HPqxvt3UmR-iSN.png" /></p>
+<p>By Chroma Official Website</p>
+<p>Our document is represented in the form of text which makes it challenging to find relevant info based on the question. Say you need to find the revenue of Apple in the last quarter in 1000 pages and compare revenue to previous years. How challenging and time-consuming it may take? So to make our search easier, we will first need to transform or represent words or phrases in a numerical format that can be used as input to machine learning models. In other words, to help machines understand the text. An embedding maps each word or phrase to a vector of real numbers, typically with hundreds of dimensions, such that similar words or phrases are mapped to similar vectors in the embedding space.</p>
+<p>One of the main advantages of using embeddings is that they can capture the semantic and syntactic relationships between words or phrases. For example, in an embedding space, the vectors for "king" and "queen" would be closer to each other than to the vector for "apple", because they are semantically related as royal titles.</p>
+<p><img alt="" src="https://miro.medium.com/0*mijTnoEZJI7qqfBl.png" /></p>
+<p>So, the embedding database does exactly that. It will store all the embedding data in the database and then give us very indexes to allow us to perform an action like data retrieval and do it in a scalable style. If you need to get the answer to the previous question of finding revenue of Apple last quarter, we will first need to perform a similarity search or semantic search on top of embedding a database like Chroma to extract relevant information and feed that information to LLM model to get the answer.</p>
+<p>Sounds too complex !! that is where Langchain comes to the rescue with all the hard work will be done in the background for us. Let's start coding, shall we?</p>
+<p>```python</p>
+<h1>import Chroma and OpenAIEmbeddings</h1>
+<p>from langchain.vectorstores import Chroma
+from langchain.embeddings.openai import OpenAIEmbeddings</p>
+<h1>initialize OpenAIEmbedding</h1>
+<p>embeddings = OpenAIEmbeddings(model='text-embedding-ada-002')</p>
+<h1>use Chroma to create in-memory embedding database from the doc</h1>
+<p>docsearch = Chroma.from_documents(texts, embeddings,  metadatas=[{"source": str(i)} for i in range(len(texts))])</p>
+<h2>perform search based on the question</h2>
+<p>query = "What is the operating income?"
+docs = docsearch.similarity_search(query)
+```</p>
+<p>You see we are able to perform a similarity search to get relevant information from the embedding database.</p>
+<p>Now, we will use one of the main components of Langchain which is Chain to incorporate LLM provider into our code. Again, I know it is hard to digest all of the concepts at once but hey, I will cover all of them in another post. Remember, the purpose of this guide is to build the question-answering bot. So just follow the step and if you are curious and can't wait to dig more into details, feel free to go to Langchain's official website. Valhalla awaits!!!!</p>
+<p><img alt="Photo by Karine Avetisyan on Unsplash" src="https://miro.medium.com/0*yPeCfrkVwhVXOBcV" /></p>
+<p>There are four types of pre-built question-answering chains:</p>
+<ul>
+<li>
+<p>Question Answering: <strong>load_qa_chain</strong></p>
+</li>
+<li>
+<p>Question Answering with Sources: <strong>load_qa_with_sources_chain</strong></p>
+</li>
+<li>
+<p>Retrieval Question Answer: <strong>RetrievalQA</strong></p>
+</li>
+<li>
+<p>Retrieval Question Answering with Sources: <strong>RetrievalQAWithSourcesChain</strong></p>
+</li>
+</ul>
+<p>They are pretty much similar, under the hood, <strong>RetrievalQA and RetrievalQAWithSourcesChain</strong> use <strong>load_qa_chain and load_qa_with_sources_chain</strong> respectively, the only difference is the first two will take all the embedding to feed into LLM while the last two only feed LLM with relevant information. We can use the first two to extract the relevant information first and feed that info to LLM only. Also, the first two give us more flexibility than the last two.</p>
+<p>The following piece of code will demonstrate how we do it.</p>
+<p>```python</p>
+<h2>importing necessary framework</h2>
+<p>from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+from langchain.chains import RetrievalQA
+from langchain.chains import RetrievalQAWithSourcesChain</p>
+<p>from langchain.chat_models import ChatOpenAI
+```</p>
+<p>Now we will try 4 different question-answering chains</p>
+<ol>
+<li>load_qa_chain</li>
+</ol>
+<p>```makefile</p>
+<h2>use LLM to get answering</h2>
+<p>chain = load_qa_chain(ChatOpenAI(temperature=0.2,model_name='gpt-3.5-turbo'), 
+                      chain_type="stuff")
+query = "What is the operating income?"
+chain.run(input_documents=docs, question=query)
+```</p>
+<p><strong>2. load_qa_with_sources_chain</strong></p>
+<p><code>python
+chain = load_qa_with_sources_chain(ChatOpenAI(temperature=0.2,model_name='gpt-3.5-turbo'), 
+                                   chain_type="stuff")
+query = "What is the operating income?"
+chain({"input_documents": docs, "question": query}, return_only_outputs=True)</code></p>
+<p><strong>3. RetrievalQA</strong></p>
+<p><code>makefile
+qa=RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.2,model_name='gpt-3.5-turbo'), chain_type="stuff", 
+                                                retriever=docsearch.as_retriever())
+query = "What is the operating income?"
+qa.run(query)</code></p>
+<p><strong>4. RetrievalQAWithSourcesChain</strong></p>
+<p><code>python
+chain=RetrievalQAWithSourcesChain.from_chain_type(ChatOpenAI(temperature=0.2,model_name='gpt-3.5-turbo'), chain_type="stuff", 
+                                                    retriever=docsearch.as_retriever())
+chain({"question": "What is the operating income?"}, return_only_outputs=True)</code></p>
+<p>Pretty easy ayy. Most of the code above is pretty basic. We just want to get this work done before digging into more depth about what does framework can offer. Until then, let's move on to another framework that you can use in conjunction with Langchain and it will give you more power to create even better LLM apps.</p>
+<h2>LLamaIndex Starter</h2>
+<p>I think we can both agree on this. I hate the name "LLamaIndex", it is too confusing and too hard to pronounce. To this day, I don't think I can pronounce LLamaIndex correctly, that is why I prefer to call it GPT-Index even though the author has published a reason why they change the name.</p>
+<p>Anyway, to the main story.</p>
+<p>I started off by introducing Langchain and if you spent some time going over its official document, you may have thought "Woaaa, no good can come above this".</p>
+<p>Well, my friends, there is an entire SaaS industry that builds on top of AWS just to make you a better and easy way to use AWS services. Same for the races between other LLM frameworks or LLM models. We are living in a world where something that is good today may be obsolete tomorrow. I personally think Langchain will have a very bright future and will be the central piece of tech that is used to build LLM apps. LLamIndex even makes our job easier and it also introduces its own edges by handling some painful well know issues and limitations of existing approaches that will take you time and manual stuff to work on such as:</p>
+<ul>
+<li>
+<p><strong>Text chunks lack global context.</strong> Oftentimes the question requires context beyond what is indexed in a specific chunk.</p>
+</li>
+<li>
+<p><strong>Careful tuning of top-k / similarity score thresholds.</strong> Make the value too small and you'll miss context. Make the value too big and cost/latency might increase with more irrelevant context.</p>
+</li>
+<li>
+<p><strong>Embeddings don't always select the most relevant context for a question.</strong> Embeddings are inherently determined separately between text and the context.</p>
+</li>
+</ul>
+<p>LLamaIndex (GPT-Index) has its own mechanism to handle those limitations. Again, the purpose of this blog is to get the job done. I won't go into detail on how LLamaIndex works. You can always find it on the official documents. However, I will go deep into LLamaIndex in future newsletters.</p>
+<h3>So What is LLM</h3>
+<p>Verily, not but a short time passed, did I come across a parchment scribed by Jerry Liu, wherein he did unveil the LlamaIndex, a portal that harnesses the power of GPT to fashion rejoinders to inquiries by making use of knowledge proffered by the inquirer.</p>
+<p>In short, <a href="https://gpt-index.readthedocs.io/en/latest/">LlamaIndex</a> is another way (similar to Langchain's way) to respond to queries by connecting LLMs to the users by following these steps:</p>
+<ol>
+<li>
+<p>Load in documents (either manually, or through a data loader)</p>
+</li>
+<li>
+<p>Parse the Documents into Nodes</p>
+</li>
+<li>
+<p>Construct Index (from Nodes or Documents)</p>
+</li>
+<li>
+<p>[Optional, Advanced] Building indices on top of other indices</p>
+</li>
+<li>
+<p>Query the index</p>
+</li>
+</ol>
+<p>In simple terms, LlamaIndex loads your data into a document object and converts it into an index. When you input a query, the index sends it to a GPT prompt to generate a response, using OpenAI's <strong>text-davinci-003</strong> model by default. Despite the seemingly complex process, it can be executed with just a few lines of code, as you will soon learn.</p>
+<p><img alt="Q&amp;A chatbot by Lexica AI" src="https://miro.medium.com/0*CzgtWsBczosIbO-P.jpeg" /></p>
+<p>You will soon see how easy it is to use LLamaIndex since it has done all the hard work under the hood. Your job is simply reading through its official document, learning different type of index, and then analysing your app requirements to see what suit you the most. Of course, there will be more and more complex kinds of stuff you may need in your app and the high-level API of LLamaIndex may not be enough to handle such cases. That is where you find how convenient it is that LLamaIndex can integrate with other tools like Langchain to make your development process faster.</p>
+<p>Let's start by setting up the simple index and loading the document.</p>
+<p>```python
+import logging
+import sys</p>
+<h2>setup your OpenAI Key</h2>
+<p>import os
+os.environ["OPENAI_API_KEY"] = "<YOUR_OPENAI_API_KEY>"</p>
+<h1>enable logs to see what happen underneath</h1>
+<p>logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
+```</p>
+<p>The centrepiece of LlamaIndex is, well, the <strong>index</strong> and there are multiple types of index.</p>
+<ul>
+<li>
+<p>List Index</p>
+</li>
+<li>
+<p>Vector Store Index</p>
+</li>
+<li>
+<p>Tree Index</p>
+</li>
+<li>
+<p>Keyword Table Index</p>
+</li>
+<li>
+<p>Graph Index</p>
+</li>
+<li>
+<p>SQL Index.</p>
+</li>
+</ul>
+<p>Each index has it own unique usage with different purposes. The good thing is you can stack index on top of other indexes, doing so will give your app more powerful to understand your document context and app requirements.</p>
+<h3>The first step is to load documents</h3>
+<p>```python
+from llama_index import GPTVectorStoreIndex
+from llama_index import download_loader</p>
+<h1>we will use this UnstructuredReader to read PDF file</h1>
+<p>UnstructuredReader = download_loader('UnstructuredReader', refresh_cache=True)
+loader = UnstructuredReader()</p>
+<h1>load the data</h1>
+<p>data = loader.load_data(f'../notebooks/documents/_10-Q-Q1-2022-(As-Filed).pdf', split_documents=False)
+```</p>
+<p>A Document represents a lightweight container around the data source. You can now choose to proceed with one of the following steps:</p>
+<ol>
+<li>
+<p>Feed the Document object directly into the index</p>
+</li>
+<li>
+<p>First, convert the Document into Node objects</p>
+</li>
+</ol>
+<p>Again, the purpose of this series is to help you build the first app as quickly as possible, so I will go straight to index construction. I will cover all the aspects of LLamaIndex in a future post.</p>
+<h3>Index Construction and Query</h3>
+<p>We can now build an index over these Document objects. The simplest high-level abstraction is to load the Document objects during index initialization.</p>
+<p><code>python
+index = GPTVectorStoreIndex.from_documents(data)
+query_engine = index.as_query_engine()
+response = query_engine.query("What is the operating income?")
+print(response)</code></p>
+<p><img alt="" src="https://miro.medium.com/0*LiOjrLfTUZLCjlZU.png" /></p>
+<p>How cool is this ay !!!</p>
+<p>Depending on which index you use, LlamaIndex may make LLM calls in order to build the index. <code>GPTVectorStoreIndex</code> won't call LLM but GPTTreeStoreIndex will.</p>
+<h3>Customizing LLM's</h3>
+<p>By default, LlamaIndex uses OpenAI's <code>text-davinci-003</code> model. You may choose to use another LLM when constructing an index.</p>
+<p>```python
+from llama_index import LLMPredictor, PromptHelper, ServiceContext
+from langchain.chat_models import ChatOpenAI</p>
+<h1>define LLM</h1>
+<p>llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0.2,model_name='gpt-3.5-turbo'))</p>
+<h1>define prompt helper</h1>
+<h1>set maximum input size</h1>
+<p>max_input_size = 4096</p>
+<h1>set number of output tokens</h1>
+<p>num_output = 256</p>
+<h1>set maximum chunk overlap</h1>
+<p>max_chunk_overlap = 20
+prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTVectorStoreIndex.from_documents(
+    documents, 
+    service_context=service_context
+)
+query_engine = index.as_query_engine()
+response = query_engine.query("What is the operating income?")
+print(response)
+```</p>
+<p>That is it guys, you see, in only a few lines of code, we were able to build an LLM app that can do basic question-answering.</p>
+<p>For someone who has a background in machine learning engineer or data science, this is fairly easy and straightforward forward but I believe for some people who are new will find it quite confusing sometimes. I understand that but it is super hard to explain everything in one post. The purpose of this post is just to give you a taste of how easy it is nowadays to build such a mind-blowing LLM application. You may have a lot of questions now and may don't even understand a few lines of code there but it is okay.</p>
+<p><img alt="" src="https://miro.medium.com/0*M3FzC70fDtvR0uHS.jpeg" /></p>
+<blockquote>
+<p>"The journey of a thousand miles begins with one step" Lao Tzu</p>
+</blockquote>
+<p>you will soon gather all the pieces of knowledge and aspects of components to build your own LLM applications. You can wait till my next post as I will cover the LlamaIndex in the next one or if you are curious enough then please go ahead to prepare yourself by reading through official documents.</p>
+<p>Until then, I wish this article has been helpful in expanding your coding knowledge and providing valuable insights into LLM. Remember to stay curious and continue exploring the vast world of AI.</p>
+<p>If you find this post and this series may help you, please subscribe/follow and share my newsletter to stay up to date with the latest articles in this series and other exciting LLM content.</p>
+<p>Thank you for reading and I look forward to seeing you in the next newsletter!</p>
+<h2>BONUSSSSSSSSSSSSS</h2>
+<p>Congratulations on making it this far! As a reward for your effort, here's a piece of code that you can use to chat with your document</p>
+<p>```python</p>
+<h1>do imports</h1>
+<p>from langchain.agents import Tool
+from langchain.chains.conversation.memory import ConversationBufferMemory
+from langchain.chat_models import ChatOpenAI
+from langchain.agents import initialize_agent</p>
+<p>from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig
+query_engine = index.as_query_engine()
+tool_config = IndexToolConfig(
+    query_engine=query_engine, 
+    name=f"Financial Report",
+    description=f"useful for when you want to answer queries about the Apple financial report",
+    tool_kwargs={"return_direct": True}
+)
+toolkit = LlamaToolkit(
+    index_configs=[tool_config]
+)
+memory = ConversationBufferMemory(memory_key="chat_history")
+llm=ChatOpenAI(temperature=0.2,model_name='gpt-3.5-turbo')
+agent_chain = create_llama_chat_agent(
+    toolkit,
+    llm,
+    memory=memory,
+    verbose=True
+)
+while True:
+    text_input = input("User: ")
+    response = agent_chain.run(input=text_input)
+    print(f'Agent: {response}')
+```</p>
+<p>And the result</p>
+<iframe src="https://cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.youtube.com%2Fembed%2FFuKFjNNbSVM%3Ffeature%3Doembed&display_name=YouTube&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DFuKFjNNbSVM&image=https%3A%2F%2Fi.ytimg.com%2Fvi%2FFuKFjNNbSVM%2Fhqdefault.jpg&key=a19fcc184b9711e1b4764040d3dc5c07&type=text%2Fhtml&schema=youtube" title="" height="480" width="640"></iframe>
+
+<h2>Links and references:</h2>
+<ol>
+<li>
+<p>LangChain docs : <a href="https://langchain.readthedocs.io/en/latest/index.html">https://langchain.readthedocs.io/en/latest/index.html</a></p>
+</li>
+<li>
+<p>LangChain Prompt Memory module: <a href="https://langchain.readthedocs.io/en/latest/modules/memory.html#memory">https://langchain.readthedocs.io/en/latest/modules/memory.html#memory</a></p>
+</li>
+<li>
+<p>LangChain Repo : <a href="https://github.com/hwchase17/langchain">https://github.com/hwchase17/langchain</a></p>
+</li>
+<li>
+<p>LlamaIndex docs: <a href="https://gpt-index.readthedocs.io/en/latest/index.html">https://gpt-index.readthedocs.io/en/latest/index.html</a></p>
+</li>
+<li>
+<p>My LinkedIn: <a href="https://www.linkedin.com/in/ryan-nguyen-abb844a4">https://www.linkedin.com/in/ryan-nguyen-abb844a4</a></p>
+</li>
+</ol>

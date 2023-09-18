@@ -1,0 +1,277 @@
+<h1>Python Decorators For Data Engineers and Data Scientists</h1>
+<p>Enhance the Readability, Efficiency, and Code Management of your Python skill by incorporating these wrappers for a significant upgrade.</p>
+<p>I'm a data engineer and machine learning engineer by train, so no doubt that Python is by far my favourite programming language due to its simple syntax and powerful application in various domains. I have been working with Python and plenty of Python libraries for Pyspark all the time in the last 8 years as the job required. Python is easy to learn and because it is too easy to learn, a lot of people just jump right into it and start to write a function that does its job without considering how to use Python in a good way that actually saves time and effort.</p>
+<p><img alt="Photo by Chris Ried on Unsplash" src="https://miro.medium.com/0*0UoIabQBbZ4jb7jT" /></p>
+<p>I remember when I switch to Python from Java and C++, it was so beautiful, and back in the day, working with data with Pandas is dead easy. You just need to write a function that does its job and is done. But then when I get into bigger and bigger projects, I realized that I've used Python in not a good way. Without class and OOP, my project keep stacking higher and higher all the similar functions that do pretty much the same job.</p>
+<p>Those days along with the old Python version are long gone. Every project I started either a data processing project or PySpark project for big data pipeline or just a Web API project I spun up for fun, I always make sure to follow best practices and leverage the full potential of Python's capabilities. The transition from writing simple functions to adopting object-oriented programming (OOP) was a turning point in my Python journey.</p>
+<p>In addition to adopting OOP, I also recognized the importance of writing clean, readable, and well-documented code. Commenting on complex logic, using meaningful variable and function names, and adhering to style guidelines have become second nature to me.</p>
+<p><img alt="" src="https://miro.medium.com/0*sdtOL4uScBVwme5n.jpg" /></p>
+<p>As the Python ecosystem continued to evolve, I found myself exploring newer libraries and frameworks that further streamlined my work, especially the <em><strong>decorator</strong></em> - a design pattern that allows you to modify the functionality of a function by wrapping it in another function.</p>
+<p>Funny that decorators were seldom on my radar unless absolutely necessary, like employing them for handling authentication and authorization in web APIs. However, as I delved deeper into the concept, I realized how much they could enhance code organization and reusability. In the realm of data engineering, where the focus lies on building robust and efficient data pipelines, decorators found their unique niche. They became a game-changer when it came to data validation and quality control. By creating decorators that automatically check data integrity before it enters the pipeline, I drastically improved the reliability of the entire process.</p>
+<p>Therefore, in this short article, we'll explore the concept of Python wrappers and present examples that can improve our Python development process.</p>
+<h2>Python Wrappers</h2>
+<p>Python wrappers refer to functions integrated into another function, enabling the addition of extra functionality or alteration of behaviour without directly editing the original source code. Typically implemented as decorators, these special functions accept another function as input and enact changes to its operation.</p>
+<p>Wrapper functions find utility in various contexts:</p>
+<ul>
+<li>
+<p><strong>Extending Functionality</strong>: Through the application of decorators, functionalities such as logging, performance measurement, or caching can be seamlessly incorporated into functions.</p>
+</li>
+<li>
+<p><strong>Promoting Code Reusability</strong>: Wrapper functions, and even classes, can be universally applied to multiple components, eliminating redundancy and guaranteeing consistent behaviour across diverse elements.</p>
+</li>
+<li>
+<p><strong>Modifying Behavior</strong>: Wrapper functions allow for the interception of input arguments. For instance, input validation can be conducted without the need for numerous assert statements, thus enhancing code clarity.</p>
+</li>
+</ul>
+<h2>Steps to create a decorator</h2>
+<h3>Define the Decorator Function</h3>
+<p>Start by defining a function that will act as your decorator. This function should take another function (the function to be decorated) as its argument. Typically, decorators have an inner function that performs the actual modification.</p>
+<p><code>python
+def my_decorator(func):
+    def wrapper(*args, **kwargs):
+        # Code to execute before the decorated function
+        result = func(*args, **kwargs)
+        # Code to execute after the decorated function
+        return result
+    return wrapper</code></p>
+<ol>
+<li>
+<p><strong>Use the Decorator Inside the Wrapper Function</strong>: 
+Within the decorator's inner function (<code>wrapper</code> in the example above), you can perform actions before and after the decorated function is called. This could involve logging, performance measurement, or any other desired behaviour.</p>
+</li>
+<li>
+<p><strong>Invoke the Decorated Function Inside the Wrapper</strong>: 
+Call the original function (<code>func</code> in the example above) from within the wrapper. You can pass any arguments and keyword arguments that were originally meant for the function.</p>
+</li>
+<li>
+<p><strong>Return the Wrapper Function</strong>: 
+The decorator function should return the inner <code>wrapper</code> function. This is crucial because the returned function will replace the original function when the decorator is applied.</p>
+</li>
+<li>
+<p><strong>Apply the Decorator Using the "@" Symbol</strong>: 
+To use the decorator, apply it to the function you want to modify using the "@" symbol. Place the decorator's name above the function definition.</p>
+</li>
+</ol>
+<p><code>python
+@my_decorator
+def my_function():
+    # Function code</code></p>
+<h2>Show Time</h2>
+<p>The better way to learn is to practice. So let's go through some of the examples that simplify real-world scenarios.</p>
+<h3>1. Timer</h3>
+<p>Easy and straightforward, I always have this custom decorator for every project. This decorator is used to monitor how long it takes for a particular function to complete data processing.</p>
+<p>```python
+import time</p>
+<p>def timer(func):
+    def wrapper(<em>args, </em><em>kwargs):
+        # start the time measure
+        start_time = time.time()
+        # call the function
+        result = func(</em>args, **kwargs)
+        # end of processing
+        end_time = time.time()
+        # calculate the difference
+        exec_time = end_time - start_time</p>
+<pre><code>    print(f"===== INFO: Execution time: {exec_time} seconds")
+    # return the result of the decorated function
+    return result
+# return reference to the wrapper function
+return wrapper
+</code></pre>
+<p>```</p>
+<p>Creating a decorator in Python involves defining a function named <strong><code>timer</code></strong> which accepts the parameter <strong><code>func</code></strong> to indicate that it is a decorator function. Inside the <strong><code>timer</code></strong>function, establish another function named <strong><code>wrapper</code></strong> which receives the customary arguments passed to the targeted function intended for decoration.</p>
+<p>Inside the "wrapper" function, the desired function is invoked using the supplied arguments <strong><code>result = func(*args, **kwargs)</code></strong>.</p>
+<p>The wrapper function returns the result of the decorated function's execution. The <strong>decorator</strong> function should return a <strong>reference</strong> to the <strong>wrapper</strong> function we just created.</p>
+<p>Now, just need to apply it to the desired function using the <code>@</code> symbol.</p>
+<p>```python
+@timer
+def data_processing():
+    print("Starting the data processing..")
+    # simulate a function by pausing for 5 seconds
+    time.sleep(5) 
+    print("Finished processing")</p>
+<p>data_processing() 
+```</p>
+<p><strong>Output:</strong></p>
+<blockquote>
+<p>Starting the data processing..
+Finished processing
+===== INFO: Execution time: 5.006768703460693 seconds</p>
+</blockquote>
+<p>Apart from measuring data processing time, I also use this function to log the processing time of the API endpoint.</p>
+<h3>2. Retry with Parameters</h3>
+<p>The provided wrapper retries the execution of a function for a designated number of attempts, incorporating pauses between each retry. This mechanism proves valuable when handling network or API calls prone to sporadic failures caused by temporary issues.</p>
+<p>You see that in the example below, I pass the arguments to the decorator itself. In order to achieve this, we define a decorator maker that accepts arguments and then define a decorator inside it. We then define a wrapper function inside the decorator as we did earlier.</p>
+<p>```python
+import time</p>
+<p>def retry(max_attempts, delay=1):
+    def decorator(func):
+        def wrapper(<em>args, </em><em>kwargs):
+            attempts = 0
+            while attempts &lt; max_attempts:
+                try:
+                    return func(</em>args, **kwargs)
+                except Exception as e:
+                    attempts += 1
+                    print(f"Attempt {attempts} failed: {e}")
+                    time.sleep(delay)
+            print(f"Function failed after {max_attempts} attempts")
+        return wrapper
+    return decorator</p>
+<p>@retry(max_attempts=3, delay=2)
+def call_endpoint(url):
+    print("Call the API endpoint to get the data..")
+    # raise error to simulate that server is not responding
+    raise TimeoutError("Server is not responding")</p>
+<p>call_endpoint("https://anyapiendpoint.com/data/34234234")
+```</p>
+<blockquote>
+<p>Output:
+Call the API endpoint to get the data..
+Attempt 1 failed: Server is not responding
+Call the API endpoint to get the data..
+Attempt 2 failed: Server is not responding
+Call the API endpoint to get the data..
+Attempt 3 failed: Server is not responding
+Function failed after 3 attempts</p>
+</blockquote>
+<h3>3. Trace Stack</h3>
+<p>The decorator <strong><code>@stacktrace</code></strong> is used to emit useful messages when functions are called and values are returned from functions:</p>
+<p>```python</p>
+<p>from sys import settrace</p>
+<p>def stacktrace(func=None, exclude_files=['2023-08-22']):
+    def tracer_func(frame, event, arg):
+        co = frame.f_code
+        func_name = co.co_name
+        caller_filename = frame.f_back.f_code.co_filename
+        if func_name == 'write':
+            return # ignore write() calls from print statements
+        for file in exclude_files:
+            if file in caller_filename:
+                return # ignore in ipython notebooks
+        args = str(tuple([frame.f_locals[arg] for arg in frame.f_code.co_varnames]))
+        if args.endswith(',)'):
+            args = args[:-2] + ')'
+        if event == 'call':
+            print(f'--&gt; Executing: {func_name}{args}')
+            return tracer_func
+        elif event == 'return':
+            print(f'--&gt; Returning: {func_name}{args} -&gt; {repr(arg)}')
+        return</p>
+<pre><code>def decorator(func: callable):
+    def inner(*args, **kwargs):
+        settrace(tracer_func)
+        func(*args, **kwargs)
+        settrace(None)
+    return inner
+if func is None:
+    # decorator was used like @stacktrace(...)
+    return decorator
+else:
+    # decorator was used like @stacktrace, without parens
+    return decorator(func)
+</code></pre>
+<p>```</p>
+<p>With this, we can put on the function where we want tracing to start</p>
+<p>```python
+def function_a(text_a):
+    print(text_a)</p>
+<p>@stacktrace
+def function_b(text_b):
+    print(text_b)
+    function_a("text _a")</p>
+<p>function_b('some text of function b')
+```</p>
+<p>Output:</p>
+<blockquote>
+<p>→ Executing: function_b(‘some text of function b')
+some text of function b
+ → Executing: function_a(‘text _a')
+text _a
+ → Returning: function_a(‘text _a') -&gt; None
+ → Returning: function_b(‘some text of function b') -&gt; None</p>
+</blockquote>
+<h3>4. Trace Class</h3>
+<p>Similar to the #3 <strong><code>@stacktrace</code></strong> we can define a decorator <strong><code>@traceclass</code></strong> which we use with classes, to get traces of its members' execution</p>
+<p>```python
+def traceclass(cls: type):
+    def make_traced(cls: type, method_name: str, method: callable):
+        def traced_method(<em>args, </em><em>kwargs):
+            print(f'--&gt; Executing: {cls.<strong>name</strong>}::{method_name}()')
+            return method(</em>args, **kwargs)
+        return traced_method
+    for name in cls.<strong>dict</strong>.keys():
+        if callable(getattr(cls, name)) and name != '<strong>class</strong>':
+            setattr(cls, name, make_traced(cls, name, getattr(cls, name)))
+    return cls</p>
+<p>@traceclass
+class SomeRandomClass:
+    i: int = 0
+    def <strong>init</strong>(self, i: int = 0):
+        self.i = i
+    def increment(self):
+        self.i += 1
+    def <strong>str</strong>(self):
+        return f'This is a {self.<strong>class</strong>.<strong>name</strong>} object with i = {self.i}'</p>
+<p>f1 = SomeRandomClass()
+f2 = SomeRandomClass(4)
+f1.increment()
+print(f1)
+print(f2)
+```</p>
+<h3>5. Massive Parallel Processing</h3>
+<p>I use this decorator to deal with the situation where I need o run a function on all of my CPU threads in parallel. Things such as process embedding data or processing the same tasks over a bunch of documents.</p>
+<p>I will put on an example to use all of your CPU to find primes. It is a simple one but you get the idea of massive and parallel processing data in real use case.</p>
+<p>```sql</p>
+<p>from random import seed, randint
+from sympy import isprime
+from joblib import Parallel, delayed
+from time import time
+from itertools import chain
+from os import cpu_count</p>
+<p>def parallel(func=None, args=(), merge_func=lambda x:x, parallelism = cpu_count()):
+    def decorator(func: callable):
+        def inner(<em>args, </em><em>kwargs):
+            results = Parallel(n_jobs=parallelism)(delayed(func)(</em>args, **kwargs) for i in range(parallelism))
+            return merge_func(results)
+        return inner
+    if func is None:
+        return decorator
+    else:
+        return decorator(func)</p>
+<p>@parallel(merge_func=lambda li: sorted(set(chain(<em>li))))
+def generate_primes(domain: int=1000</em>1000, num_attempts: int=1000) -&gt; list[int]:
+    primes: set[int] = set()
+    seed(time())
+    for _ in range(num_attempts):
+        candidate: int = randint(4, domain)
+        if isprime(candidate):
+            primes.add(candidate)
+    return sorted(primes)</p>
+<p>print(len(generate_primes()))
+```</p>
+<h2>Conclusion</h2>
+<p>In Python, functions are first-class citizens, and decorators are magically powerful wands to give programmers a seemingly "magic" way to construct useful compositions of functions and classes. By using wrappers, you have a pathway to simplifying intricate tasks, enhancing code readability, and boosting overall productivity.</p>
+<p>In this article, we explored five examples</p>
+<ul>
+<li>
+<p>Timer</p>
+</li>
+<li>
+<p>Retry</p>
+</li>
+<li>
+<p>Stacktrace</p>
+</li>
+<li>
+<p>Classtrace</p>
+</li>
+<li>
+<p>Parallel</p>
+</li>
+</ul>
+<p>The last three are complicated and way too advanced compared to the first two. Decorator is not too difficult to understand as you can see in the first two and you can really take your Python programming skills to the next level when you understand and utilize the last three.</p>
+<hr />
+<p>If you do like this article, please give it a clap, seriously, a clap means a lot to me, and feel free to hit follow and subscribe to get notified for upcoming posts in the future. If you have any questions, please leave a comment, I may be slow to respond but I will try to answer as soon as possible.</p>
+<p>If you need to reach out, don't hesitate to drop me a message via my <a href="https://twitter.com/kiennt_">Twitter</a> or my <a href="https://www.linkedin.com/in/ryan-nguyen-abb844a4/">LinkedIn</a>.</p>
+<p><strong>Subscribe to my substack as I cover more ML in-depth:</strong> <a href="https://howaibuildthis.substack.com/">https://howaibuildthis.substack.com/</a></p>

@@ -1,0 +1,103 @@
+<h1>Build Your Own Chatbot on Your Own PDF: A Guide for Highly Regulated Industries</h1>
+<p><img alt="Photo by Sigmund on Unsplash" src="https://miro.medium.com/0*q8oFVMhtMWH7dJ1N" /></p>
+<p>Are you tired of sifting through large, cumbersome manuals in highly regulated industries such as insurance, lending, banking, securities, or government? What if we told you that you could build your own chatbot from any document you'd like? This will empower new employees to learn concepts, and more experienced employees can run more complex scenarios through the chatbot for feedback. In this guide, we will show you how to build your own chatbot using Streamlit and OpenAI API, and how it can help you save time and increase productivity.</p>
+<p>Streamlit is a powerful framework that makes it easy to build beautiful and highly interactive web applications. It's an open-source library that lets you create data apps in Python. OpenAI API provides a suite of cutting-edge AI models that can be used to automate and optimize business processes. We'll be using the GPT-3.5 Turbo model in this guide, which is the most powerful model that OpenAI currently offers.</p>
+<p>Version one of this guide is effectively a proof of concept. Can we upload a document, send it to OpenAI API successfully, ask it a question, and have it return an answer? Yes, yes we can! Here's the code:</p>
+<p>```python
+import os
+os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
+import openai
+import streamlit as st
+import PyPDF2
+from PyPDF2 import PdfReader
+import openai</p>
+<p>def pdf_to_text(file_path):
+    with open(file_path, 'rb') as f:
+        pdf_reader = PdfReader(f)
+        mytext = ""
+        for pageNum in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[pageNum]
+            mytext += page.extract_text()
+    return mytext</p>
+<p>def ask_gpt(question, context, context_length=2048):
+    context = context[-context_length:]  # Truncate the context to the last context_length characters
+    prompt = f"{context}\nQuestion: {question}\nAnswer:"
+    response = openai.Completion.create(
+        engine="text-davinci-002", # Use GPT-3.5 Turbo
+        prompt=prompt,
+        max_tokens=150,
+        n=1,
+        stop=None,
+        temperature=0.8,
+    )
+    return response.choices[0].text.strip()</p>
+<p>st.title("Document-based Chatbot")</p>
+<p>uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")</p>
+<p>if uploaded_file is not None:
+    with open("temp.pdf", "wb") as f:
+        f.write(uploaded_file.read())
+    text = pdf_to_text("temp.pdf")
+    st.success("File uploaded successfully!")
+    st.write("Extracted text from the PDF:")
+    st.write(text[:1000] + "...")  # Show only first 1000 characters</p>
+<pre><code>question = st.text_input("Ask a question about the document:")
+if st.button("Submit"):
+    answer = ask_gpt(question, text, 2048)
+    st.subheader("Answer:")
+    st.write(answer)
+</code></pre>
+<p>else:
+    st.warning("Please upload a PDF file")</p>
+<p>```</p>
+<p>After we've successfully uploaded the document and asked a question, the next question becomes, how can we have a conversation with our document through the chatbot? To do this, we have to add the question back so that it has some context and can include it in determining its reply. We'll also need to use the session state feature in Streamlit to store the conversation history. Here's the code:</p>
+<p>```python
+import os
+os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
+import openai
+import streamlit as st
+import PyPDF2
+from PyPDF2 import PdfReader
+import openai</p>
+<p>def pdf_to_text(file_path):
+    with open(file_path, 'rb') as f:
+        pdf_reader = PdfReader(f)
+        mytext = ""
+        for pageNum in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[pageNum]
+            mytext += page.extract_text()
+    return mytext</p>
+<p>def ask_gpt(question, context, context_length=2048):
+    context = context[-context_length:]  # Truncate the context to the last context_length characters
+    prompt = f"{context}\nQuestion: {question}\nAnswer:"
+    response = openai.Completion.create(
+        engine="text-davinci-002", # Use GPT-3.5 Turbo
+        prompt=prompt,
+        max_tokens=150,
+        n=1,
+        stop=None,
+        temperature=0.8,
+    )
+    return response.choices[0].text.strip()</p>
+<p>st.title("Document-based Chatbot")</p>
+<p>uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
+conversation_history = ""</p>
+<p>if uploaded_file is not None:
+    with open("temp.pdf", "wb") as f:
+        f.write(uploaded_file.read())
+    text = pdf_to_text("temp.pdf")
+    st.success("File uploaded successfully!")
+    st.write("Extracted text from the PDF:")
+    st.write(text[:1000] + "...")  # Show only first 1000 characters</p>
+<pre><code>question = st.text_input("Ask a question about the document:")
+if st.button("Submit"):
+    conversation_history +=f"\nQuestion: {question}"
+    answer = ask_gpt(question, text + conversation_history)
+    conversation_history += f"\nAnswer: {answer}"
+    st.subheader("Answer:")
+    st.write(answer)
+</code></pre>
+<p>else:
+    st.warning("Please upload a PDF file")
+```</p>
+<p>We're still working on some of the UI features, such as getting it to advance to a new conversation, similar to how you'd expect. However, the proof of concept is working. By building a chatbot, new employees can get up to speed faster on company processes, and underwriters, compliance analysts, etc. can adapt more quickly to changes made in their areas via updated manuals and chatbots. This tool can save a company in terms of productivity and return on salary investment dollars by optimizing knowledge uptake.</p>
+<p>In conclusion, building your own chatbot for highly regulated industries using Streamlit and OpenAI API can revolutionize the way you work. It can save you time, increase productivity, and optimize knowledge uptake. With this guide, you now have the tools to create your own chatbot and take your work to the next level.</p>
